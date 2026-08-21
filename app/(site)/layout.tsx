@@ -8,7 +8,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen">
       <header className="bg-white border-b border-stone-200">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
           <Link href="/" className="font-semibold whitespace-nowrap">
             {SITE_NAME}
           </Link>
@@ -33,7 +33,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </nav>
         </div>
       </header>
-      <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
     </div>
   );
 }

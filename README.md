@@ -26,16 +26,30 @@ project and topic, and searchable.
 
 ### Saving a Claude Artifact
 
-Use the artifact's own HTML, not the page you get from **Save page as HTML**. That
-file is only the loader shell: it fetches the artifact from Anthropic using your
-Claude session, so stored anywhere else it shows a spinner and nothing more. The
-item page recognises it and says so.
+A published artifact only offers a share link — no download — so take the HTML
+out of the browser:
 
-To get the real thing, open the artifact in Claude and use its download or
-copy-code control — an HTML artifact is a single self-contained file. Choose that
-file in the HTML item's file picker. It renders as a live page here, scripts and
-all, and the markup stays editable from the same box whenever you want to change
-it.
+1. Open the artifact so the page itself is on screen.
+2. Right-click **inside the artifact content** (not the Claude interface around
+   it) and choose **View Frame Source**. In Firefox it is **This Frame → View
+   Frame Source**. Right-clicking the outer page instead gives you the loader,
+   which holds no content — the item page recognises that and warns you.
+3. In the source tab, select all and copy.
+4. Paste into the HTML box of a new item.
+
+Claude wraps an artifact in a frame runtime — a `<base href>` and a script that
+talks to the claude.ai shell. Both are stripped automatically on save, so there
+is nothing to trim by hand.
+
+You can also ask any Claude session with access to your artifacts for the HTML;
+it can read them directly and hand you a file for the file picker.
+
+### Editing an HTML item
+
+Open the item, click **Edit**, and the HTML box becomes a two-pane editor: markup
+on the left, a live preview on the right that repaints as you type. The preview
+uses the same sandbox readers get, so what you see is what they get. Save applies
+the change immediately.
 
 > **Google caveat:** the embed is loaded by the viewer's browser directly from
 > Google, so Google's own sharing still applies. Share the doc with the same

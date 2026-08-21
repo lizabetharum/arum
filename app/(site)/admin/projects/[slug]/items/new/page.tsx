@@ -12,7 +12,7 @@ export default async function NewItemPage({ params }: { params: Promise<{ slug: 
   if (!project) notFound();
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-6xl">
       <nav className="text-sm text-stone-500 mb-3">
         <Link href={`/admin/projects/${project.slug}`} className="hover:text-stone-800">
           {project.name}

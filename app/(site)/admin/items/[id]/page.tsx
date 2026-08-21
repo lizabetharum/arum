@@ -21,7 +21,7 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
   const grantedIds = new Set(item.grants.map((g) => g.userId));
 
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="max-w-6xl space-y-8">
       <div>
         <nav className="text-sm text-stone-500 mb-3">
           <Link href={`/admin/projects/${item.project.slug}`} className="hover:text-stone-800">
