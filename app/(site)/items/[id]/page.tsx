@@ -4,15 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { getAccessibleItem } from "@/lib/access";
 import { embedUrl } from "@/lib/embed";
 import { categoryLabel, kindIcon, kindLabel } from "@/lib/constants";
-
-/**
- * A Claude Artifact "Save page as HTML" gives you the bootstrap shell, which is
- * useless without Anthropic's origin and the reader's session. Both markers are
- * specific to that shell, so a false positive on an ordinary page is unlikely.
- */
-function looksLikeArtifactShell(html: string) {
-  return html.includes("frame.claudeusercontent.com") || html.includes("data-frame-uuid");
-}
+import { looksLikeArtifactShell } from "@/lib/sanitize-html";
 
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();

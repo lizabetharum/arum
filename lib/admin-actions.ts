@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAdmin, hashPassword } from "@/lib/auth";
 import { CATEGORIES, KINDS } from "@/lib/constants";
+import { cleanStoredHtml } from "@/lib/sanitize-html";
 
 function slugify(name: string) {
   return (
@@ -149,7 +150,7 @@ async function itemDataFrom(formData: FormData) {
     kind: KIND_VALUES.includes(kind) ? kind : "link",
     category: CATEGORY_VALUES.includes(category) ? category : "other",
     url: str(formData, "url"),
-    htmlContent: String(formData.get("htmlContent") ?? ""),
+    htmlContent: cleanStoredHtml(String(formData.get("htmlContent") ?? "")).html,
     restricted: formData.get("restricted") === "on",
   };
 }
