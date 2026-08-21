@@ -25,9 +25,22 @@ export default async function HomePage() {
       <section>
         <h1 className="text-xl font-semibold mb-4">Projects</h1>
         {projects.length === 0 ? (
-          <p className="text-stone-500 text-sm">
-            You haven&apos;t been added to any projects yet.
-          </p>
+          // An admin sees every project, so an empty list means none exist yet —
+          // telling her she hasn't been "added to" any would be misleading, and
+          // it is the first thing she sees on a freshly set up library.
+          user.role === "admin" ? (
+            <p className="text-stone-500 text-sm">
+              No projects yet.{" "}
+              <Link href="/admin/projects" className="underline hover:text-stone-800">
+                Create your first one
+              </Link>
+              .
+            </p>
+          ) : (
+            <p className="text-stone-500 text-sm">
+              You haven&apos;t been added to any projects yet.
+            </p>
+          )
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
