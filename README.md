@@ -26,23 +26,27 @@ project and topic, and searchable.
 
 ### Saving a Claude Artifact
 
-A published artifact only offers a share link — no download — so take the HTML
-out of the browser:
+A published artifact offers only a share link, and its page cannot be fetched
+from a server — the content is loaded in the browser using your Claude session,
+so a server request gets claude.ai's app shell and nothing else. The HTML has to
+come out of a browser, or from Claude itself.
 
-1. Open the artifact so the page itself is on screen.
-2. Right-click **inside the artifact content** (not the Claude interface around
-   it) and choose **View Frame Source**. In Firefox it is **This Frame → View
-   Frame Source**. Right-clicking the outer page instead gives you the loader,
-   which holds no content — the item page recognises that and warns you.
-3. In the source tab, select all and copy.
-4. Paste into the HTML box of a new item.
+**Easiest — ask Claude.** In any Claude conversation: "give me the HTML for my
+*[artifact name]* artifact as a file." Claude can read your own artifacts and
+hand you a file for the picker. No developer tools, any browser.
 
-Claude wraps an artifact in a frame runtime — a `<base href>` and a script that
-talks to the claude.ai shell. Both are stripped automatically on save, so there
-is nothing to trim by hand.
+**Safari.** Settings → Advanced → tick *Show features for web developers* (older
+versions: *Show Develop menu in menu bar*). Then right-click inside the artifact
+content → *Inspect Element*. In the DOM tree find the artifact's `<iframe>`,
+expand it to the `<html>` inside, right-click that → *Copy* → *Outer HTML*.
 
-You can also ask any Claude session with access to your artifacts for the HTML;
-it can read them directly and hand you a file for the file picker.
+**Chrome or Edge.** Right-click inside the artifact content → *View Frame
+Source*, then select all and copy. Firefox: *This Frame → View Frame Source*.
+
+Right-clicking the page *around* the artifact gives you the loader instead, which
+holds no content — the item page recognises that and says so. Claude's frame
+wrapper is stripped automatically on save, so there is never anything to trim by
+hand.
 
 ### Editing an HTML item
 

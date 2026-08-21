@@ -147,20 +147,34 @@ export function ItemFormFields({
             <summary className="cursor-pointer hover:text-stone-800">
               Getting the HTML out of a Claude Artifact
             </summary>
-            <ol className="mt-2 ml-4 list-decimal space-y-1">
-              <li>Open the artifact so the page itself is showing.</li>
-              <li>
-                Right-click <strong>inside the artifact content</strong> (not the surrounding
-                Claude chrome) → <strong>View Frame Source</strong>. In Firefox it is{" "}
-                <strong>This Frame → View Frame Source</strong>.
-              </li>
-              <li>Select all (⌘A) and copy (⌘C) in the source tab.</li>
-              <li>Paste into the box on the left.</li>
-            </ol>
             <p className="mt-2">
-              Claude&apos;s frame wrapper is stripped automatically on save, so you don&apos;t
-              need to trim anything. If you use <em>Save page as HTML</em> on the outer page
-              instead, you get a loader with no content in it — that one can&apos;t be used.
+              A published artifact offers only a share link, and its page can&apos;t be fetched
+              from a server — the content loads in the browser from your Claude session. So it
+              has to come out of a browser, or from Claude itself.
+            </p>
+            <p className="mt-2">
+              <strong>Easiest — ask Claude.</strong> In any Claude conversation:
+              &ldquo;give me the HTML for my <em>[artifact name]</em> artifact as a file&rdquo;.
+              Claude can read your own artifacts and hand you a file for the picker above.
+              No developer tools, any browser.
+            </p>
+            <p className="mt-2">
+              <strong>Safari</strong> — Settings → Advanced → tick <em>Show features for web
+              developers</em> (older versions: <em>Show Develop menu in menu bar</em>). Then
+              right-click inside the artifact content → <em>Inspect Element</em>. In the DOM
+              tree find the artifact&apos;s <code>&lt;iframe&gt;</code>, expand it to the
+              <code> &lt;html&gt;</code> inside, right-click that → <em>Copy</em> →
+              <em> Outer HTML</em>.
+            </p>
+            <p className="mt-2">
+              <strong>Chrome or Edge</strong> — right-click inside the artifact content →
+              <em> View Frame Source</em>, then select all and copy. Firefox:{" "}
+              <em>This Frame → View Frame Source</em>.
+            </p>
+            <p className="mt-2">
+              Right-click the page <em>around</em> the artifact and you get the loader instead,
+              which holds no content. Claude&apos;s frame wrapper is stripped automatically on
+              save, so there is never anything to trim by hand.
             </p>
           </details>
         </div>
