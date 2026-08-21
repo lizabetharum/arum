@@ -1,0 +1,100 @@
+// Artifact Library — data model.
+//
+// Access model: a user only ever sees items in projects they are a member of.
+// Within a project, an item marked `restricted` is visible only to the users it
+// has been explicitly granted to (plus admins). Admins see everything and are
+// the only ones who can create users, projects, and items.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  name         String
+  passwordHash String
+  role         String          @default("member") // "admin" | "member"
+  memberships  ProjectMember[]
+  itemGrants   ItemGrant[]
+  sessions     Session[]
+  createdAt    DateTime        @default(now())
+}
+
+model Session {
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  slug        String          @unique
+  name        String
+  description String          @default("")
+  members     ProjectMember[]
+  items       Item[]
+  createdAt   DateTime        @default(now())
+}
+
+model ProjectMember {
+  id        String  @id @default(cuid())
+  userId    String
+  projectId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+model Item {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String      @default("")
+  // "google_doc" | "google_sheet" | "google_slides" | "html" | "link"
+  kind        String
+  url         String      @default("") // external kinds: the Google/other URL
+  htmlContent String      @default("") // kind "html": the page itself, stored in the DB
+  // "debrief" | "idea" | "best_practice" | "research" | "presentation" | "other"
+  category    String      @default("other")
+  restricted  Boolean     @default(false) // true: only granted users (and admins) see it
+  grants      ItemGrant[]
+  tags        ItemTag[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model ItemGrant {
+  id     String @id @default(cuid())
+  itemId String
+  userId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  items ItemTag[]
+}
+
+model ItemTag {
+  id     String @id @default(cuid())
+  itemId String
+  tagId  String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, tagId])
+}
