@@ -32,9 +32,26 @@ export function ItemFormFields({
   submitLabel: string;
 }) {
   const [kind, setKind] = useState(defaults.kind ?? "google_doc");
-  const [htmlBytes, setHtmlBytes] = useState(
-    () => new Blob([defaults.htmlContent ?? ""]).size,
-  );
+  const [html, setHtml] = useState(defaults.htmlContent ?? "");
+  const [fileNote, setFileNote] = useState<string | null>(null);
+  const htmlBytes = new Blob([html]).size;
+
+  /**
+   * Load a .html file straight into the field.
+   *
+   * A self-contained page — an exported Claude Artifact, a saved report — is
+   * usually a file on disk, and pasting a few hundred KB through the clipboard
+   * is miserable and easy to truncate. Reading it here also means the size is
+   * known before anything is sent.
+   */
+  async function loadFile(file: File) {
+    if (file.size > MAX_HTML_BYTES) {
+      setFileNote(`${file.name} is ${formatBytes(file.size)} — over the ${formatBytes(MAX_HTML_BYTES)} limit.`);
+      return;
+    }
+    setHtml(await file.text());
+    setFileNote(`Loaded ${file.name} (${formatBytes(file.size)}).`);
+  }
 
   const isHtml = kind === "html";
   const tooLarge = isHtml && htmlBytes > MAX_HTML_BYTES;
@@ -87,15 +104,29 @@ export function ItemFormFields({
       </div>
 
       {isHtml ? (
-        <label className="block text-sm">
+        <div className="block text-sm">
           <span className="block text-xs text-stone-500 mb-1">
-            HTML — paste the whole page here
+            HTML — choose a file or paste the whole page. Stored here, so you can edit it
+            later from this box.
           </span>
+          <input
+            type="file"
+            accept=".html,.htm,text/html"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void loadFile(file);
+            }}
+            className="mb-2 block w-full text-xs text-stone-600 file:mr-3 file:rounded-lg file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:border-stone-500"
+          />
+          {fileNote && <span className="mb-2 block text-xs text-stone-600">{fileNote}</span>}
           <textarea
             name="htmlContent"
             rows={8}
-            defaultValue={defaults.htmlContent}
-            onChange={(e) => setHtmlBytes(new Blob([e.target.value]).size)}
+            value={html}
+            onChange={(e) => {
+              setHtml(e.target.value);
+              setFileNote(null);
+            }}
             className={`${input} font-mono text-xs`}
           />
           <span
@@ -112,10 +143,10 @@ export function ItemFormFields({
               </>
             )}
           </span>
-        </label>
+        </div>
       ) : (
         // Kept mounted so switching kinds mid-edit doesn't silently drop stored HTML.
-        <input type="hidden" name="htmlContent" defaultValue={defaults.htmlContent} />
+        <input type="hidden" name="htmlContent" value={html} readOnly />
       )}
 
       <label className="block text-sm">

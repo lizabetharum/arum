@@ -21,8 +21,21 @@ project and topic, and searchable.
 | Kind | How it's shown |
 | --- | --- |
 | Google Doc / Sheet / Slides | Embedded viewer (paste the normal `/edit` URL; it's converted automatically) |
-| HTML page | Stored in the database, served behind the same access check |
+| HTML page | Choose a `.html` file or paste the markup; stored in the database, served behind the same access check, and editable here afterwards |
 | Link | A plain outbound link |
+
+### Saving a Claude Artifact
+
+Use the artifact's own HTML, not the page you get from **Save page as HTML**. That
+file is only the loader shell: it fetches the artifact from Anthropic using your
+Claude session, so stored anywhere else it shows a spinner and nothing more. The
+item page recognises it and says so.
+
+To get the real thing, open the artifact in Claude and use its download or
+copy-code control — an HTML artifact is a single self-contained file. Choose that
+file in the HTML item's file picker. It renders as a live page here, scripts and
+all, and the markup stays editable from the same box whenever you want to change
+it.
 
 > **Google caveat:** the embed is loaded by the viewer's browser directly from
 > Google, so Google's own sharing still applies. Share the doc with the same
