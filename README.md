@@ -123,6 +123,22 @@ project — rename or delete it from `/admin/projects` once you are oriented.
 
 ### If something goes wrong
 
+Open **`/api/health`** on the deployed site first — e.g.
+`https://your-domain/api/health`. It reports which setup step is incomplete and
+what to do about it, without needing access to the logs:
+
+| `step` | Meaning |
+| --- | --- |
+| `environment` | `DATABASE_URL` isn't in the deployment. Add it, then redeploy. |
+| `connection` | The variable is set but the database refused the connection. |
+| `schema` | Connected, but the tables don't exist — run the schema (`db:push`, or `sql/01-schema.sql`). |
+| `admin` | Tables exist but there's no account — run the seed (`db:seed`, or `sql/02-admin.sql`). |
+| `ready` | All three are done; you can sign in. |
+
+It reports no data and no connection details, only which step is incomplete.
+
+
+
 | Symptom | Cause and fix |
 | --- | --- |
 | `db:push` hangs or says it can't reach the server | Your network may be IPv4-only, which the direct connection doesn't support. In Supabase's Connect dialog, use the **Session pooler** string (port `5432`, host contains `pooler`) as `DIRECT_URL`. |
