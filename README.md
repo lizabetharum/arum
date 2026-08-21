@@ -37,33 +37,99 @@ the signed-in person is allowed to see.
 
 ## One-time setup
 
-### 1. Database (Supabase)
+Do these in order. Steps 1–2 are in the browser; step 3 is in a terminal on your
+own machine.
 
-1. Create a free project at [supabase.com](https://supabase.com). Save the
-   database password.
-2. Dashboard → **Connect** → **ORMs** (or **Connection string → URI**). Copy two
-   strings:
-   - **Transaction / pooled** (port `6543`, has `pgbouncer=true`) → `DATABASE_URL`
-   - **Session / direct** (port `5432`) → `DIRECT_URL`
+### 1. Create the database (Supabase)
 
-### 2. Create the tables and your admin account
+1. Go to [supabase.com](https://supabase.com) and sign in.
+2. Click **New project**.
+3. Fill in:
+   - **Name** — anything, e.g. `artifact-library`
+   - **Database Password** — click *Generate a password* and **copy it somewhere
+     safe now**. You cannot see it again, and you need it in step 2.
+   - **Region** — pick the one closest to you.
+4. Click **Create new project** and wait ~2 minutes while it provisions.
+5. When it finishes, click the **Connect** button in the top bar of the dashboard.
+6. In the dialog, open the **ORMs** tab and choose **Prisma** from the dropdown.
+   It shows a block containing `DATABASE_URL` and `DIRECT_URL`.
+7. Copy both values. **Replace `[YOUR-PASSWORD]` in each one with the password
+   from step 3** — Supabase shows a placeholder, not the real password.
 
-```bash
-npm install
-cp .env.example .env        # paste in the real DATABASE_URL / DIRECT_URL
-npm run db:push             # creates the tables, then enables RLS
-ADMIN_PASSWORD='choose-one' npm run db:seed
+You should end up with two strings that look like this:
+
+```
+DATABASE_URL  postgresql://postgres.abcd:REALPASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL    postgresql://postgres.abcd:REALPASSWORD@aws-0-us-east-1.pooler.supabase.com:5432/postgres
 ```
 
-`db:seed` creates the admin account (`ADMIN_EMAIL`, default `lizarum@gmail.com`)
-and, on an empty database, one sample project. Re-running it never changes an
-existing account's password.
+Check before moving on: one ends in **6543** with `?pgbouncer=true`, the other
+ends in **5432**. If you only see one string, you are on the *Connection string*
+tab rather than *ORMs* — switch tabs.
 
-### 3. Deploy (Vercel)
+### 2. Add them to Vercel
 
-The Vercel project builds from this repo's root. Add `DATABASE_URL` and
-`DIRECT_URL` as Environment Variables (Production **and** Preview), then deploy.
-`prisma generate` runs automatically via `postinstall`.
+1. Open your project at
+   [vercel.com/liz-arums-projects/arum](https://vercel.com/liz-arums-projects/arum).
+2. Click **Settings** (top nav), then **Environment Variables** (left sidebar).
+3. Add the first variable:
+   - **Key**: `DATABASE_URL`
+   - **Value**: the `6543` string from step 1
+   - **Environments**: tick **Production**, **Preview**, and **Development**
+   - Click **Save**
+4. Add the second the same way:
+   - **Key**: `DIRECT_URL`
+   - **Value**: the `5432` string
+   - Same three environments, then **Save**
+
+### 3. Create the tables and your admin login
+
+In a terminal on your own machine:
+
+```bash
+git clone https://github.com/lizabetharum/arum
+cd arum
+npm install
+cp .env.example .env
+```
+
+Open `.env` in an editor and replace the two placeholder lines with the real
+strings from step 1. Save and close. Then:
+
+```bash
+npm run db:push
+```
+
+Expect it to end with something like `✓ RLS enforced — 8 newly enabled, all 8
+tables protected.` Then create your admin account, choosing your own password:
+
+```bash
+ADMIN_PASSWORD='your-password-here' npm run db:seed
+```
+
+Expect `Admin: lizarum@gmail.com (created)` and `Created sample project: Sandbox`.
+
+### 4. Deploy and sign in
+
+1. Back in Vercel, open the **Deployments** tab.
+2. On the most recent deployment, click the **⋯** menu → **Redeploy** →
+   **Redeploy**. (Environment variables are only read at build time, so the
+   deployment made before step 2 does not have them.)
+3. When it goes green, open the deployment URL and sign in with
+   `lizarum@gmail.com` and the password you chose in step 3.
+
+You should land on a page listing one project, **Sandbox**. That is the sample
+project — rename or delete it from `/admin/projects` once you are oriented.
+
+### If something goes wrong
+
+| Symptom | Cause and fix |
+| --- | --- |
+| `db:push` hangs or says it can't reach the server | Your network may be IPv4-only, which the direct connection doesn't support. In Supabase's Connect dialog, use the **Session pooler** string (port `5432`, host contains `pooler`) as `DIRECT_URL`. |
+| `Authentication failed` on `db:push` | `[YOUR-PASSWORD]` is still in the connection string, or the password was mistyped. Re-copy from step 1. |
+| Site loads but every page is a 500 | The env vars aren't in the build. Confirm both exist in Vercel Settings, then redeploy (step 4). |
+| `No account with that email` at sign-in | `db:seed` hasn't run, or ran against a different database than Vercel points at. Check `.env` matches the Vercel values. |
+| Build fails | Send the build log — the app builds without a database, so a build failure is something else. |
 
 ## Security notes
 
