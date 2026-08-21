@@ -93,10 +93,13 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       )}
       {item.kind === "html" && looksLikeArtifactShell(item.htmlContent) && (
         <p className="mt-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          This is the <strong>loader page</strong> for a Claude Artifact, not the artifact
-          itself — it fetches the real content from Anthropic using your Claude session, which
-          it can&apos;t do from here, so it will only ever show a spinner. Save the artifact&apos;s
-          share URL as a <strong>Link</strong> item instead.
+          <strong>This is the page around the artifact, not the artifact itself</strong> — it
+          holds no content, only a script that fetches the real page from Anthropic, which it
+          can&apos;t do from here. To fix it: <strong>Edit</strong> this item and paste the{" "}
+          <code>&lt;html&gt;</code> from <em>inside</em> the artifact&apos;s{" "}
+          <code>&lt;iframe&gt;</code> (expand the iframe node in the inspector first) — or ask
+          Claude for &ldquo;the HTML for my <em>[artifact]</em> artifact as a file&rdquo; and
+          load that with the file picker.
         </p>
       )}
       {item.kind === "html" && (

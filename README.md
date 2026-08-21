@@ -26,27 +26,38 @@ project and topic, and searchable.
 
 ### Saving a Claude Artifact
 
-A published artifact offers only a share link, and its page cannot be fetched
-from a server — the content is loaded in the browser using your Claude session,
-so a server request gets claude.ai's app shell and nothing else. The HTML has to
-come out of a browser, or from Claude itself.
+The artifact viewer has no download button — its header offers Share and nothing
+else. The page can't be fetched from a server either: the content loads in the
+browser from your Claude session, so a server request returns claude.ai's app
+shell. (The download button described in Claude's help articles belongs to
+artifacts created inside a claude.ai conversation, which is a different surface
+from a Claude Code artifact.)
 
-**Easiest — ask Claude.** In any Claude conversation: "give me the HTML for my
-*[artifact name]* artifact as a file." Claude can read your own artifacts and
-hand you a file for the picker. No developer tools, any browser.
+Three routes that do work, easiest first:
 
-**Safari.** Settings → Advanced → tick *Show features for web developers* (older
-versions: *Show Develop menu in menu bar*). Then right-click inside the artifact
-content → *Inspect Element*. In the DOM tree find the artifact's `<iframe>`,
-expand it to the `<html>` inside, right-click that → *Copy* → *Outer HTML*.
+1. **Attach it in Claude Code.** Run `/artifacts`, select the artifact, press
+   **Enter** to attach it to the session, then ask Claude to save its HTML to a
+   file. Load that file with the picker. No developer tools, no browser.
+2. **Ask Claude in any conversation.** "Give me the HTML for my *[artifact
+   name]* artifact as a file." Claude can read your own artifacts directly.
+3. **The original file.** Claude Code writes the page to an `.html` file in your
+   project before publishing it, so the clean source is often already on disk in
+   the project where you created it.
 
-**Chrome or Edge.** Right-click inside the artifact content → *View Frame
-Source*, then select all and copy. Firefox: *This Frame → View Frame Source*.
+Copying out of the browser also works, but it is the fiddly option, because you
+need the `<html>` *inside* the artifact's `<iframe>` rather than the page around
+it — copying the outer document gives you a loader with no content in it, which
+the editor and the item page both warn about.
 
-Right-clicking the page *around* the artifact gives you the loader instead, which
-holds no content — the item page recognises that and says so. Claude's frame
-wrapper is stripped automatically on save, so there is never anything to trim by
-hand.
+- **Chrome / Edge**: right-click inside the artifact content → *View Frame
+  Source* → select all → copy. Firefox: *This Frame → View Frame Source*.
+- **Safari**: Settings → Advanced → tick *Show features for web developers*, then
+  right-click inside the artifact → *Inspect Element*, expand the artifact's
+  `<iframe>` to the `<html>` inside it, and right-click that → *Copy* → *Outer
+  HTML*.
+
+Claude's frame wrapper is stripped automatically on save, so there is never
+anything to trim by hand.
 
 ### Editing an HTML item
 

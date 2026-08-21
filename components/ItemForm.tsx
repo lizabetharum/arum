@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CATEGORIES, KINDS, MAX_HTML_BYTES, formatBytes } from "@/lib/constants";
+import { looksLikeArtifactShell } from "@/lib/sanitize-html";
 
 const input =
   "w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
@@ -39,6 +40,9 @@ export function ItemFormFields({
 
   const isHtml = kind === "html";
   const htmlBytes = new Blob([html]).size;
+  // Catch the wrong-document paste while it is still on screen. The outer page
+  // carries data-frame-uuid; the artifact inside the iframe does not.
+  const pastedTheShell = isHtml && html.length > 0 && looksLikeArtifactShell(html);
   const tooLarge = isHtml && htmlBytes > MAX_HTML_BYTES;
 
   async function loadFile(file: File) {
@@ -123,6 +127,18 @@ export function ItemFormFields({
             </div>
           </div>
 
+          {pastedTheShell && (
+            <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <strong>This is the page around the artifact, not the artifact.</strong> It holds
+              no content — only a script that fetches the real page from Anthropic. In the
+              inspector you copied the outer <code>&lt;html&gt;</code>; you need the{" "}
+              <code>&lt;html&gt;</code> <em>inside</em> the artifact&apos;s{" "}
+              <code>&lt;iframe&gt;</code> — expand the iframe node first, then copy that one.
+              The preview on the right stays blank until you have the right document. Quicker
+              still: ask Claude for &ldquo;the HTML for my <em>[artifact]</em> artifact as a
+              file&rdquo; and use the file picker.
+            </p>
+          )}
           {tooLarge && (
             <p className="mt-1 text-xs text-red-600">
               Too large to save. Pages saved from a browser carry a lot of extra markup — try
@@ -148,33 +164,34 @@ export function ItemFormFields({
               Getting the HTML out of a Claude Artifact
             </summary>
             <p className="mt-2">
-              A published artifact offers only a share link, and its page can&apos;t be fetched
-              from a server — the content loads in the browser from your Claude session. So it
-              has to come out of a browser, or from Claude itself.
+              The artifact viewer has no download button — only Share. Its page can&apos;t be
+              fetched from a server either, because the content loads in the browser from your
+              Claude session. Three routes that do work, easiest first:
             </p>
+            <ol className="mt-2 ml-4 list-decimal space-y-2">
+              <li>
+                <strong>Attach it in Claude Code.</strong> Run <code>/artifacts</code>, select
+                the artifact, press <strong>Enter</strong> to attach it to the session, then ask
+                Claude to save its HTML to a file. Load that file with the picker above.
+              </li>
+              <li>
+                <strong>Ask Claude in any conversation.</strong> &ldquo;Give me the HTML for my{" "}
+                <em>[artifact name]</em> artifact as a file.&rdquo; Claude can read your own
+                artifacts.
+              </li>
+              <li>
+                <strong>The original file.</strong> Claude Code writes the page to an{" "}
+                <code>.html</code> file in your project before publishing it, so the clean
+                source may already be on disk where you created it.
+              </li>
+            </ol>
             <p className="mt-2">
-              <strong>Easiest — ask Claude.</strong> In any Claude conversation:
-              &ldquo;give me the HTML for my <em>[artifact name]</em> artifact as a file&rdquo;.
-              Claude can read your own artifacts and hand you a file for the picker above.
-              No developer tools, any browser.
-            </p>
-            <p className="mt-2">
-              <strong>Safari</strong> — Settings → Advanced → tick <em>Show features for web
-              developers</em> (older versions: <em>Show Develop menu in menu bar</em>). Then
-              right-click inside the artifact content → <em>Inspect Element</em>. In the DOM
-              tree find the artifact&apos;s <code>&lt;iframe&gt;</code>, expand it to the
-              <code> &lt;html&gt;</code> inside, right-click that → <em>Copy</em> →
-              <em> Outer HTML</em>.
-            </p>
-            <p className="mt-2">
-              <strong>Chrome or Edge</strong> — right-click inside the artifact content →
-              <em> View Frame Source</em>, then select all and copy. Firefox:{" "}
-              <em>This Frame → View Frame Source</em>.
-            </p>
-            <p className="mt-2">
-              Right-click the page <em>around</em> the artifact and you get the loader instead,
-              which holds no content. Claude&apos;s frame wrapper is stripped automatically on
-              save, so there is never anything to trim by hand.
+              Copying from the browser also works but is fiddly: you need the{" "}
+              <code>&lt;html&gt;</code> <em>inside</em> the artifact&apos;s{" "}
+              <code>&lt;iframe&gt;</code>, not the page around it. Chrome and Firefox:
+              right-click inside the artifact → <em>View Frame Source</em>. Safari: enable web
+              developer features in Settings → Advanced, then <em>Inspect Element</em>, expand
+              the iframe node, and copy the outer HTML of the document inside it.
             </p>
           </details>
         </div>
