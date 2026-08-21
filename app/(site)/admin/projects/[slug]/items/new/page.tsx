@@ -23,10 +23,7 @@ export default async function NewItemPage({ params }: { params: Promise<{ slug: 
       <h1 className="text-xl font-semibold mb-5">Add an item</h1>
       <form action={createItem} className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
         <input type="hidden" name="projectId" value={project.id} />
-        <ItemFormFields />
-        <button className="rounded-lg bg-stone-800 text-white px-4 py-2 text-sm hover:bg-stone-700">
-          Create item
-        </button>
+        <ItemFormFields submitLabel="Create item" />
         <p className="text-xs text-stone-500">
           If you restrict it, grant people on the next screen after creating.
         </p>

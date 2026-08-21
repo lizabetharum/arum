@@ -47,10 +47,8 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
               restricted: item.restricted,
               tags: item.tags.map(({ tag }) => tag.name).join(", "),
             }}
+            submitLabel="Save"
           />
-          <button className="rounded-lg bg-stone-800 text-white px-4 py-2 text-sm hover:bg-stone-700">
-            Save
-          </button>
         </form>
       </div>
 
