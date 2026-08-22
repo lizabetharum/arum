@@ -35,14 +35,37 @@ from a Claude Code artifact.)
 
 Three routes that do work, easiest first:
 
-1. **Attach it in Claude Code.** Run `/artifacts`, select the artifact, press
-   **Enter** to attach it to the session, then ask Claude to save its HTML to a
-   file. Load that file with the picker. No developer tools, no browser.
-2. **Ask Claude in any conversation.** "Give me the HTML for my *[artifact
-   name]* artifact as a file." Claude can read your own artifacts directly.
-3. **The original file.** Claude Code writes the page to an `.html` file in your
-   project before publishing it, so the clean source is often already on disk in
-   the project where you created it.
+**1. Attach it in Claude Code** (no developer tools, no browser):
+
+```
+/artifacts
+```
+
+Arrow to the artifact you want and press **Enter** — that attaches it to the
+session. (`o` opens it in a browser and `c` copies its link instead, so use
+Enter.) Then ask for the file:
+
+```
+Save the attached artifact's HTML to velocity-arena-pathway.html in this folder.
+```
+
+Claude writes the file; load it with the picker above. Needs Claude Code v2.1.208
+or later for `/artifacts`, and v2.1.216 or later for Enter to attach rather than
+open — run `claude --version` to check.
+
+Works from the artifact's URL too, if you already have the link:
+
+```
+Read https://claude.ai/code/artifact/<uuid> and save its HTML to pathway.html
+```
+
+**2. Ask Claude in any conversation.** "Give me the HTML for my *[artifact
+name]* artifact as a file." Claude can read your own artifacts directly.
+
+**3. The original file.** Claude Code writes the page to an `.html` file in your
+project *before* publishing it, so the clean source is often already on disk in
+the project where you created it. Search that folder for a `.html` file named
+after the artifact.
 
 Copying out of the browser also works, but it is the fiddly option, because you
 need the `<html>` *inside* the artifact's `<iframe>` rather than the page around
