@@ -10,6 +10,7 @@
 // those three steps is incomplete, plus a Prisma error code.
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -76,5 +77,33 @@ export async function GET() {
     );
   }
 
-  return Response.json({ ok: true, step: "ready", detail: "Database reachable, tables present, at least one account exists." });
+  // Counts answer the question "is my content actually there?", which is what
+  // people are really asking when a page looks emptier than they expected. They
+  // are only shown to someone signed in: an unauthenticated caller gets enough
+  // to see the app is healthy and nothing about what it holds.
+  const viewer = await getCurrentUser();
+  if (!viewer) {
+    return Response.json({
+      ok: true,
+      step: "ready",
+      detail: "Database reachable, tables present, at least one account exists. Sign in and reload for content counts.",
+    });
+  }
+
+  const [projects, items, comments] = await Promise.all([
+    prisma.project.count(),
+    prisma.item.count(),
+    prisma.comment.count().catch(() => 0),
+  ]);
+
+  return Response.json({
+    ok: true,
+    step: "ready",
+    detail: "Database reachable, tables present, at least one account exists.",
+    contents: { projects, items, comments, users },
+    note:
+      items === 0
+        ? "No items exist yet — projects can be created and still be empty. If you expected items here, they were deleted rather than hidden: this count ignores access rules."
+        : undefined,
+  });
 }
