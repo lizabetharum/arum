@@ -39,6 +39,7 @@ export async function createUser(formData: FormData) {
   try {
     await prisma.user.create({
       data: { email, name, role, passwordHash: await unusablePassword(), ...newInvite() },
+      select: { id: true },
     });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
@@ -58,7 +59,7 @@ export async function createUser(formData: FormData) {
 export async function resendInvite(formData: FormData) {
   await requireAdmin();
   const userId = str(formData, "userId");
-  await prisma.user.update({ where: { id: userId }, data: newInvite() });
+  await prisma.user.update({ where: { id: userId }, data: newInvite(), select: { id: true } });
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
@@ -70,6 +71,7 @@ export async function cancelInvite(formData: FormData) {
   await prisma.user.update({
     where: { id: userId },
     data: { inviteToken: null, inviteExpiresAt: null },
+    select: { id: true },
   });
   revalidatePath("/admin/users");
   redirect("/admin/users");
@@ -85,6 +87,7 @@ export async function setUserPassword(formData: FormData) {
   await prisma.user.update({
     where: { id: userId },
     data: { passwordHash: await hashPassword(password), inviteToken: null, inviteExpiresAt: null },
+    select: { id: true },
   });
   // Changing a password logs that person out everywhere.
   await prisma.session.deleteMany({ where: { userId } });
@@ -95,7 +98,7 @@ export async function deleteUser(formData: FormData) {
   const admin = await requireAdmin();
   const userId = str(formData, "userId");
   if (userId === admin.id) redirect("/admin/users?error=You%20can%27t%20delete%20your%20own%20account.");
-  await prisma.user.delete({ where: { id: userId } });
+  await prisma.user.delete({ where: { id: userId }, select: { id: true } });
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }

@@ -15,7 +15,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
   const project = await prisma.project.findUnique({
     where: { slug },
     include: {
-      members: { include: { user: true }, orderBy: { user: { name: "asc" } } },
+      members: { include: { user: { select: { id: true, name: true, email: true, role: true } } }, orderBy: { user: { name: "asc" } } },
       items: { orderBy: { updatedAt: "desc" }, include: { grants: true } },
     },
   });
@@ -25,6 +25,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
   const nonMembers = await prisma.user.findMany({
     where: { id: { notIn: [...memberIds] } },
     orderBy: { name: "asc" },
+    select: { id: true, name: true, email: true },
   });
 
   return (

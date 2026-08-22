@@ -77,6 +77,61 @@ export async function GET() {
     );
   }
 
+  // Each later migration adds a column or table that some part of the app
+  // needs. Asked of the catalogue with raw SQL rather than through Prisma, so
+  // that a missing column is reported by name instead of throwing the same
+  // opaque error the pages would.
+  const pending: { file: string; adds: string; until: string }[] = [];
+  const hasColumn = async (table: string, column: string) => {
+    const rows = await prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT count(*) AS n FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = ${table} AND column_name = ${column}`;
+    return Number(rows[0]?.n ?? 0) > 0;
+  };
+  const hasTable = async (table: string) => {
+    const rows = await prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT count(*) AS n FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = ${table}`;
+    return Number(rows[0]?.n ?? 0) > 0;
+  };
+
+  if (!(await hasTable("Comment"))) {
+    pending.push({
+      file: "sql/03-add-comments.sql",
+      adds: "the Comment table",
+      until: "Comments stay hidden everywhere.",
+    });
+  }
+  if (!(await hasColumn("Item", "body"))) {
+    pending.push({
+      file: "sql/04-add-notes-and-images.sql",
+      adds: "Item.body",
+      until: "Notes save with no text in them.",
+    });
+  }
+  if (!(await hasColumn("User", "inviteToken"))) {
+    pending.push({
+      file: "sql/05-add-invites.sql",
+      adds: "User.inviteToken and User.inviteExpiresAt",
+      until: "Adding a person fails and invite links do not appear.",
+    });
+  }
+
+  if (pending.length > 0) {
+    return Response.json(
+      {
+        ok: false,
+        step: "migrations",
+        detail: `Signing in works, but ${pending.length} database update${
+          pending.length === 1 ? " has" : "s have"
+        } not been run yet.`,
+        pending,
+        fix: "Open each file listed above in the repo, paste it into the Supabase SQL Editor, and Run. They are safe to run twice.",
+      },
+      { status: 503 },
+    );
+  }
+
   // Counts answer the question "is my content actually there?", which is what
   // people are really asking when a page looks emptier than they expected. They
   // are only shown to someone signed in: an unauthenticated caller gets enough

@@ -10,7 +10,7 @@ export default async function NewItemPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const project = await prisma.project.findUnique({
     where: { slug },
-    include: { members: { include: { user: true }, orderBy: { user: { name: "asc" } } } },
+    include: { members: { include: { user: { select: { id: true, name: true, email: true, role: true } } }, orderBy: { user: { name: "asc" } } } },
   });
   if (!project) notFound();
   const members = project.members.map((m) => ({

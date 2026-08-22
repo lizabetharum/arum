@@ -35,6 +35,7 @@ export async function acceptInvite(_prev: InviteState, formData: FormData): Prom
     where: { id: invite.id },
     // The link is spent as the password is set, so it cannot be used twice.
     data: { passwordHash: await hashPassword(password), inviteToken: null, inviteExpiresAt: null },
+    select: { id: true },
   });
   await createSession(invite.id);
   redirect("/");

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { cancelInvite, createUser, deleteUser, resendInvite, setUserPassword } from "@/lib/admin-actions";
@@ -23,16 +24,45 @@ export default async function UsersPage({
 }) {
   const admin = await requireAdmin();
   const { error } = await searchParams;
-  const users = await prisma.user.findMany({
-    orderBy: { name: "asc" },
-    include: { memberships: { include: { project: true } } },
-  });
+  // Invite columns are only on this page, and only after sql/05 has been run.
+  // If it has not, the page still lists everyone -- minus the invite links --
+  // and says what to run, rather than failing with an error digest.
+  const select = {
+    id: true,
+    name: true,
+    email: true,
+    role: true,
+    memberships: { include: { project: true } },
+  };
+  let users;
+  let needsInviteMigration = false;
+  try {
+    users = await prisma.user.findMany({
+      orderBy: { name: "asc" },
+      select: { ...select, inviteToken: true, inviteExpiresAt: true },
+    });
+  } catch (e) {
+    if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2022")) throw e;
+    needsInviteMigration = true;
+    const rows = await prisma.user.findMany({ orderBy: { name: "asc" }, select });
+    users = rows.map((u) => ({ ...u, inviteToken: null, inviteExpiresAt: null }));
+  }
 
   return (
     <div className="space-y-8">
       <section>
         <h1 className="text-xl font-semibold mb-4">People</h1>
         {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+        {needsInviteMigration && (
+          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-medium">Invite links are not switched on yet.</p>
+            <p className="mt-1">
+              Run <code className="font-mono">sql/05-add-invites.sql</code> in the Supabase SQL
+              Editor. Until then, adding a person will fail — use <strong>Reset password</strong> on
+              an existing account to let someone in.
+            </p>
+          </div>
+        )}
         <div className="space-y-3">
           {users.map((u) => (
             <div key={u.id} className="bg-white rounded-xl border border-stone-200 p-4">

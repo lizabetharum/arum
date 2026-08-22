@@ -47,7 +47,7 @@ only the ones you have not run yet. All are safe to run twice.
 | `04-add-notes-and-images.sql` | `Item.body` | Notes save empty |
 | `05-add-invites.sql` | `User.inviteToken`, `User.inviteExpiresAt` | "Add a person" fails |
 
-`/api/health` tells you where you stand at any point.
+`/api/health` lists by name any of these you have not run yet.
 
 ## Keeping these in sync
 

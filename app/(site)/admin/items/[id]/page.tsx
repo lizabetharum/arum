@@ -11,7 +11,7 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
   const item = await prisma.item.findUnique({
     where: { id },
     include: {
-      project: { include: { members: { include: { user: true }, orderBy: { user: { name: "asc" } } } } },
+      project: { include: { members: { include: { user: { select: { id: true, name: true, email: true, role: true } } }, orderBy: { user: { name: "asc" } } } } },
       tags: { include: { tag: true } },
       grants: true,
     },

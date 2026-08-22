@@ -90,7 +90,14 @@ export async function requireAdmin(): Promise<SessionUser> {
 }
 
 export async function login(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+  // Only the two fields signing in actually needs. Asking for the whole row
+  // would make signing in depend on every column in the schema existing, so a
+  // column added in a later release but not yet migrated would lock everyone
+  // out of the site rather than just breaking the feature that uses it.
+  const user = await prisma.user.findUnique({
+    where: { email: email.trim().toLowerCase() },
+    select: { id: true, passwordHash: true },
+  });
   // Verify against a constant hash when the account is missing so the two
   // failures take the same time and the login form can't be used to probe
   // which emails have accounts.
