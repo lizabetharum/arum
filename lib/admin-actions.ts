@@ -19,6 +19,21 @@ function slugify(name: string) {
   );
 }
 
+/**
+ * True when the failure is the invite columns not being there — sql/05 has not
+ * been run against this database yet. Worth telling apart from a real fault,
+ * because everything except the invite feature itself can carry on without it.
+ */
+function isMissingInviteColumn(e: unknown) {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2022";
+}
+
+const RUN_MIGRATION =
+  "/admin/users?error=" +
+  encodeURIComponent(
+    "Invite links need one more database update. Run sql/05-add-invites.sql in the Supabase SQL Editor, then try again.",
+  );
+
 function str(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
@@ -45,6 +60,7 @@ export async function createUser(formData: FormData) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       redirect("/admin/users?error=An%20account%20with%20that%20email%20already%20exists.");
     }
+    if (isMissingInviteColumn(e)) redirect(RUN_MIGRATION);
     throw e;
   }
   revalidatePath("/admin/users");
@@ -59,7 +75,12 @@ export async function createUser(formData: FormData) {
 export async function resendInvite(formData: FormData) {
   await requireAdmin();
   const userId = str(formData, "userId");
-  await prisma.user.update({ where: { id: userId }, data: newInvite(), select: { id: true } });
+  try {
+    await prisma.user.update({ where: { id: userId }, data: newInvite(), select: { id: true } });
+  } catch (e) {
+    if (isMissingInviteColumn(e)) redirect(RUN_MIGRATION);
+    throw e;
+  }
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
@@ -68,11 +89,16 @@ export async function resendInvite(formData: FormData) {
 export async function cancelInvite(formData: FormData) {
   await requireAdmin();
   const userId = str(formData, "userId");
-  await prisma.user.update({
-    where: { id: userId },
-    data: { inviteToken: null, inviteExpiresAt: null },
-    select: { id: true },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { inviteToken: null, inviteExpiresAt: null },
+      select: { id: true },
+    });
+  } catch (e) {
+    if (isMissingInviteColumn(e)) redirect(RUN_MIGRATION);
+    throw e;
+  }
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
@@ -84,11 +110,20 @@ export async function setUserPassword(formData: FormData) {
   if (password.length < 8) redirect("/admin/users?error=Passwords%20must%20be%20at%20least%208%20characters.");
   // Setting a password directly also withdraws any outstanding invite link,
   // which would otherwise still be good for changing the password you just set.
-  await prisma.user.update({
-    where: { id: userId },
-    data: { passwordHash: await hashPassword(password), inviteToken: null, inviteExpiresAt: null },
-    select: { id: true },
-  });
+  const passwordHash = await hashPassword(password);
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, inviteToken: null, inviteExpiresAt: null },
+      select: { id: true },
+    });
+  } catch (e) {
+    if (!isMissingInviteColumn(e)) throw e;
+    // No invite columns to withdraw, so just set the password. Setting a
+    // password has to keep working on a database that is behind on migrations:
+    // it is how you get back in when something else has gone wrong.
+    await prisma.user.update({ where: { id: userId }, data: { passwordHash }, select: { id: true } });
+  }
   // Changing a password logs that person out everywhere.
   await prisma.session.deleteMany({ where: { userId } });
   redirect("/admin/users");
