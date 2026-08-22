@@ -8,8 +8,16 @@ import { ItemFormFields } from "@/components/ItemForm";
 export default async function NewItemPage({ params }: { params: Promise<{ slug: string }> }) {
   await requireAdmin();
   const { slug } = await params;
-  const project = await prisma.project.findUnique({ where: { slug } });
+  const project = await prisma.project.findUnique({
+    where: { slug },
+    include: { members: { include: { user: true }, orderBy: { user: { name: "asc" } } } },
+  });
   if (!project) notFound();
+  const members = project.members.map((m) => ({
+    id: m.user.id,
+    name: m.user.name,
+    email: m.user.email,
+  }));
 
   return (
     <div className="max-w-6xl">
@@ -23,10 +31,8 @@ export default async function NewItemPage({ params }: { params: Promise<{ slug: 
       <h1 className="text-xl font-semibold mb-5">Add an item</h1>
       <form action={createItem} className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
         <input type="hidden" name="projectId" value={project.id} />
-        <ItemFormFields submitLabel="Create item" />
-        <p className="text-xs text-stone-500">
-          If you restrict it, grant people on the next screen after creating.
-        </p>
+        <ItemFormFields submitLabel="Create item" members={members} />
+
       </form>
     </div>
   );

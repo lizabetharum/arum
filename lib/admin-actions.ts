@@ -184,8 +184,24 @@ export async function createItem(formData: FormData) {
   const data = await itemDataFrom(formData);
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project || !data.title) redirect("/admin/projects");
+  // Grants are only meaningful on a restricted item, and only for people who
+  // are actually in the project — a tick for anyone else would be a grant that
+  // never applies, so it is dropped rather than stored.
+  const ticked = formData.getAll("userIds").map(String);
+  const memberIds = data.restricted
+    ? (await prisma.projectMember.findMany({ where: { projectId }, select: { userId: true } })).map(
+        (m) => m.userId,
+      )
+    : [];
+  const grants = ticked.filter((id) => memberIds.includes(id));
+
   const item = await prisma.item.create({
-    data: { ...data, projectId, tags: { create: tagOps(formData) } },
+    data: {
+      ...data,
+      projectId,
+      tags: { create: tagOps(formData) },
+      grants: { create: grants.map((userId) => ({ userId })) },
+    },
   });
   revalidatePath("/", "layout");
   redirect(`/admin/items/${item.id}`);
@@ -196,9 +212,28 @@ export async function updateItem(formData: FormData) {
   const itemId = str(formData, "itemId");
   const data = await itemDataFrom(formData);
   if (!data.title) redirect(`/admin/items/${itemId}`);
+  const existing = await prisma.item.findUnique({ where: { id: itemId }, select: { projectId: true } });
+  if (!existing) redirect("/admin/projects");
+  const ticked = formData.getAll("userIds").map(String);
+  const memberIds = data.restricted
+    ? (
+        await prisma.projectMember.findMany({
+          where: { projectId: existing.projectId },
+          select: { userId: true },
+        })
+      ).map((m) => m.userId)
+    : [];
+  const grants = ticked.filter((id) => memberIds.includes(id));
+
   await prisma.item.update({
     where: { id: itemId },
-    data: { ...data, tags: { deleteMany: {}, create: tagOps(formData) } },
+    data: {
+      ...data,
+      tags: { deleteMany: {}, create: tagOps(formData) },
+      // Clearing Restricted drops the grants too: leaving them would quietly
+      // restore an old audience if it were ever switched back on.
+      grants: { deleteMany: {}, create: grants.map((userId) => ({ userId })) },
+    },
   });
   revalidatePath("/", "layout");
   redirect(`/admin/items/${itemId}`);
@@ -212,19 +247,4 @@ export async function deleteItem(formData: FormData) {
   });
   revalidatePath("/", "layout");
   redirect(`/admin/projects/${item.project.slug}`);
-}
-
-/** Replace a restricted item's grant list with the checked project members. */
-export async function setItemGrants(formData: FormData) {
-  await requireAdmin();
-  const itemId = str(formData, "itemId");
-  const userIds = formData.getAll("userIds").map(String);
-  const item = await prisma.item.findUnique({ where: { id: itemId } });
-  if (!item) redirect("/admin/projects");
-  await prisma.$transaction([
-    prisma.itemGrant.deleteMany({ where: { itemId } }),
-    prisma.itemGrant.createMany({ data: userIds.map((userId) => ({ itemId, userId })) }),
-  ]);
-  revalidatePath("/", "layout");
-  redirect(`/admin/items/${itemId}`);
 }

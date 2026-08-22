@@ -8,6 +8,8 @@ import { NotePreview } from "@/components/NotePreview";
 const input =
   "w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
 
+export type Member = { id: string; name: string; email: string };
+
 type ItemDefaults = {
   title?: string;
   body?: string;
@@ -23,15 +25,22 @@ type ItemDefaults = {
 export function ItemFormFields({
   defaults = {},
   submitLabel,
+  members = [],
+  grantedIds = [],
 }: {
   defaults?: ItemDefaults;
   submitLabel: string;
+  /** Everyone in this item's project — the only people who could be granted it. */
+  members?: Member[];
+  grantedIds?: string[];
 }) {
   const [kind, setKind] = useState(defaults.kind ?? "note");
   const [html, setHtml] = useState(defaults.htmlContent ?? "");
   const [body, setBody] = useState(defaults.body ?? "");
   const [image, setImage] = useState(defaults.url ?? "");
   const [imageNote, setImageNote] = useState<string | null>(null);
+  const [restricted, setRestricted] = useState(defaults.restricted ?? false);
+  const [granted, setGranted] = useState<string[]>(grantedIds);
   const [fileNote, setFileNote] = useState<string | null>(null);
 
   // The preview lags the editor deliberately. Re-rendering a 60 KB document into
@@ -302,12 +311,70 @@ export function ItemFormFields({
         <input name="url" type="url" defaultValue={defaults.url} className={input} />
       </label>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="restricted" defaultChecked={defaults.restricted} />
-        <span>
-          Restricted — only people granted below (and admins) can see this, even inside the project
-        </span>
-      </label>
+      {/*
+        Who can see this is decided here, next to the restrict switch, rather than
+        on a later screen. Splitting them meant an item could sit restricted and
+        granted to nobody without anyone noticing.
+      */}
+      <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="restricted"
+            checked={restricted}
+            onChange={(e) => setRestricted(e.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            <strong>Restricted</strong> — only the people ticked below (and admins) can see this,
+            even though they are in the project.
+          </span>
+        </label>
+
+        {!restricted ? (
+          <p className="mt-2 text-xs text-stone-500">
+            Everyone in this project can see it —{" "}
+            {members.length === 0
+              ? "though the project has no members yet, so that is only you."
+              : members.length === 1
+                ? "1 member, plus admins."
+                : `${members.length} members, plus admins.`}
+          </p>
+        ) : members.length === 0 ? (
+          <p className="mt-2 text-xs text-amber-800">
+            This project has no members to grant it to yet, so only admins will see it. Add
+            members to the project first, then come back.
+          </p>
+        ) : (
+          <div className="mt-3">
+            <p className="text-xs text-stone-500 mb-1">Who can see it:</p>
+            <div className="space-y-1">
+              {members.map((m) => (
+                <label key={m.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="userIds"
+                    value={m.id}
+                    checked={granted.includes(m.id)}
+                    onChange={(e) =>
+                      setGranted((g) =>
+                        e.target.checked ? [...g, m.id] : g.filter((x) => x !== m.id),
+                      )
+                    }
+                  />
+                  <span>{m.name}</span>
+                  <span className="text-stone-400 text-xs">{m.email}</span>
+                </label>
+              ))}
+            </div>
+            {granted.length === 0 && (
+              <p className="mt-2 text-xs text-amber-800">
+                Nobody is ticked, so only admins will see this item.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       <button
         type="submit"

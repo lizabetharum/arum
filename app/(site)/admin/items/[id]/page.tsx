@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { deleteItem, setItemGrants, updateItem } from "@/lib/admin-actions";
+import { deleteItem, updateItem } from "@/lib/admin-actions";
 import { ItemFormFields } from "@/components/ItemForm";
 
 export default async function AdminItemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -49,47 +49,15 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
               tags: item.tags.map(({ tag }) => tag.name).join(", "),
             }}
             submitLabel="Save"
+            members={item.project.members.map((m) => ({
+              id: m.user.id,
+              name: m.user.name,
+              email: m.user.email,
+            }))}
+            grantedIds={item.grants.map((g) => g.userId)}
           />
         </form>
       </div>
-
-      <section className="bg-white rounded-xl border border-stone-200 p-5">
-        <h2 className="font-medium mb-1">Who can see this item</h2>
-        {item.restricted ? (
-          <>
-            <p className="text-xs text-stone-500 mb-3">
-              Restricted: of the project&apos;s members, only the people checked here (plus admins) see it.
-            </p>
-            {item.project.members.length === 0 ? (
-              <p className="text-sm text-stone-500">This project has no members to grant.</p>
-            ) : (
-              <form action={setItemGrants} className="space-y-2">
-                <input type="hidden" name="itemId" value={item.id} />
-                {item.project.members.map((m) => (
-                  <label key={m.userId} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="userIds"
-                      value={m.userId}
-                      defaultChecked={grantedIds.has(m.userId)}
-                    />
-                    <span>{m.user.name}</span>
-                    <span className="text-stone-400">{m.user.email}</span>
-                  </label>
-                ))}
-                <button className="rounded-lg bg-stone-800 text-white px-4 py-2 text-sm hover:bg-stone-700">
-                  Save access
-                </button>
-              </form>
-            )}
-          </>
-        ) : (
-          <p className="text-sm text-stone-500">
-            Everyone in <strong>{item.project.name}</strong> ({item.project.members.length}{" "}
-            member{item.project.members.length === 1 ? "" : "s"}). Tick “Restricted” above to narrow it.
-          </p>
-        )}
-      </section>
 
       <section className="border-t border-stone-200 pt-4">
         <form action={deleteItem}>
