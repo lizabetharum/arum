@@ -51,6 +51,7 @@ CREATE TABLE "Item" (
     "kind" TEXT NOT NULL,
     "url" TEXT NOT NULL DEFAULT '',
     "htmlContent" TEXT NOT NULL DEFAULT '',
+    "body" TEXT NOT NULL DEFAULT '',
     "category" TEXT NOT NULL DEFAULT 'other',
     "restricted" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

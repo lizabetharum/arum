@@ -44,6 +44,7 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
               category: item.category,
               url: item.url,
               htmlContent: item.htmlContent,
+              body: item.body,
               restricted: item.restricted,
               tags: item.tags.map(({ tag }) => tag.name).join(", "),
             }}

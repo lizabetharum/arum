@@ -48,6 +48,8 @@ export async function searchItems(user: SessionUser, query: string): Promise<Ite
           OR: [
             { title: { contains: q, mode: "insensitive" } },
             { description: { contains: q, mode: "insensitive" } },
+            // A note's text is its content, so searching it is the whole point.
+            { body: { contains: q, mode: "insensitive" } },
             { tags: { some: { tag: { name: { contains: q, mode: "insensitive" } } } } },
           ],
         },

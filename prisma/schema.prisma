@@ -61,10 +61,15 @@ model Item {
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title       String
   description String      @default("")
-  // "google_doc" | "google_sheet" | "google_slides" | "html" | "link"
+  // "note" | "image" | "google_doc" | "google_sheet" | "google_slides" | "html" | "link"
   kind        String
-  url         String      @default("") // external kinds: the Google/other URL
+  /// External kinds: the Google/other URL. Kind "image": either a URL or, for an
+  /// uploaded file, a data: URI holding the image itself.
+  url         String      @default("")
   htmlContent String      @default("") // kind "html": the page itself, stored in the DB
+  /// Kind "note": what you typed, as Markdown. Kept as source rather than
+  /// rendered HTML so it stays editable and searchable as the words you wrote.
+  body        String      @default("")
   // "debrief" | "idea" | "best_practice" | "research" | "presentation" | "other"
   category    String      @default("other")
   restricted  Boolean     @default(false) // true: only granted users (and admins) see it

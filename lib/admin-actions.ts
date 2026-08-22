@@ -144,13 +144,21 @@ const CATEGORY_VALUES = CATEGORIES.map((c) => c.value as string);
 async function itemDataFrom(formData: FormData) {
   const kind = str(formData, "kind");
   const category = str(formData, "category");
+  // An uploaded image arrives as a data: URI and is stored in the url field,
+  // where every other kind keeps its address too. A typed URL still wins if the
+  // author gave one, so replacing an uploaded image with a hosted one works.
+  const typedUrl = str(formData, "url");
+  const imageData = String(formData.get("imageData") ?? "");
+  const url = kind === "image" && !typedUrl && imageData.startsWith("data:") ? imageData : typedUrl;
+
   return {
     title: str(formData, "title"),
     description: str(formData, "description"),
     kind: KIND_VALUES.includes(kind) ? kind : "link",
     category: CATEGORY_VALUES.includes(category) ? category : "other",
-    url: str(formData, "url"),
+    url,
     htmlContent: cleanStoredHtml(String(formData.get("htmlContent") ?? "")).html,
+    body: String(formData.get("body") ?? ""),
     restricted: formData.get("restricted") === "on",
   };
 }

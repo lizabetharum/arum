@@ -8,6 +8,7 @@ import { looksLikeArtifactShell } from "@/lib/sanitize-html";
 import { getComments, groupThreads } from "@/lib/comments";
 import { Comments } from "@/components/Comments";
 import { ReviewFrame } from "@/components/ReviewFrame";
+import { NotePreview } from "@/components/NotePreview";
 
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -95,6 +96,19 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           allow="fullscreen"
         />
       )}
+      {item.kind === "note" && (
+        <article className="mt-6 rounded-xl border border-stone-200 bg-white p-6">
+          <NotePreview markdown={item.body} />
+        </article>
+      )}
+
+      {item.kind === "image" && item.url && (
+        <figure className="mt-6 rounded-xl border border-stone-200 bg-white p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.url} alt={item.description || item.title} className="mx-auto max-w-full rounded" />
+        </figure>
+      )}
+
       {item.kind === "html" && looksLikeArtifactShell(item.htmlContent) && (
         <p className="mt-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <strong>This is the page around the artifact, not the artifact itself</strong> — it

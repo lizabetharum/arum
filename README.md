@@ -20,9 +20,26 @@ project and topic, and searchable.
 
 | Kind | How it's shown |
 | --- | --- |
+| Note | Type straight into the item, in Markdown; edited beside a live preview and searchable by its words |
+| Image | Choose a file (up to 2 MB) or paste a URL |
 | Google Doc / Sheet / Slides | Embedded viewer (paste the normal `/edit` URL; it's converted automatically) |
 | HTML page | Choose a `.html` file or paste the markup; stored in the database, served behind the same access check, and editable here afterwards |
 | Link | A plain outbound link |
+
+### Notes and images
+
+A **Note** is the quickest kind to make: pick Note, type, save. The editor puts
+your text on the left and a live preview on the right. Markdown works — `##`
+headings, `**bold**`, `-` lists, `>` quotes, `` `code` ``, and links — and
+anything outside that set shows as the characters you typed rather than
+disappearing. Search covers the note's words, not just its title, so a debrief is
+findable by what it says.
+
+An **Image** is stored in the database as a data URI, which is why it needs no
+storage service, no bucket, and no keys. The trade is a 2 MB ceiling: screenshots
+and diagrams fit comfortably, photos straight off a phone will not — export
+smaller, or paste a URL to an image hosted elsewhere. If you ever need many large
+images, that's the point to move them to Supabase Storage.
 
 ### Saving a Claude Artifact
 

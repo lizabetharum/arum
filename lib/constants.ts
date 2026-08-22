@@ -10,6 +10,8 @@ export const CATEGORIES = [
 ] as const;
 
 export const KINDS = [
+  { value: "note", label: "Note", icon: "📝" },
+  { value: "image", label: "Image", icon: "🖼" },
   { value: "google_doc", label: "Google Doc", icon: "📄" },
   { value: "google_sheet", label: "Google Sheet", icon: "📊" },
   { value: "google_slides", label: "Google Slides", icon: "🖼️" },
@@ -38,6 +40,17 @@ export function kindIcon(value: string) {
  * rather than dying as an unexplained server exception mid-upload.
  */
 export const MAX_HTML_BYTES = 3_800_000;
+
+/**
+ * Largest image an item may hold.
+ *
+ * Uploaded images are stored in the database as data: URIs, which is what lets
+ * this work with no storage service to set up. Base64 inflates a file by about a
+ * third, so the ceiling is set well under MAX_HTML_BYTES to leave room. Photos
+ * straight off a phone will exceed it; screenshots and diagrams, the things a
+ * library like this actually holds, will not.
+ */
+export const MAX_IMAGE_BYTES = 2_000_000;
 
 export function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
