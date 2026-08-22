@@ -1,4 +1,5 @@
 import "server-only";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { SessionUser } from "@/lib/auth";
 import { itemAccessWhere } from "@/lib/access";
@@ -30,13 +31,33 @@ export async function canSeeItem(user: SessionUser, itemId: string) {
   return found !== null;
 }
 
+/**
+ * True when the database predates commenting.
+ *
+ * Deploying this code reaches a live database before anyone runs the migration
+ * for it, and an item page that throws on a missing table takes the whole page
+ * down over a feature nobody has used yet. Reading comments therefore treats an
+ * absent table as "no comments", so the library keeps working until the
+ * migration is run. Writing still fails loudly — silently discarding someone's
+ * comment would be worse than an error.
+ */
+function isMissingTable(e: unknown) {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2021";
+}
+
 export async function getComments(user: SessionUser, itemId: string): Promise<CommentRow[]> {
   if (!(await canSeeItem(user, itemId))) return [];
-  const rows = await prisma.comment.findMany({
-    where: { itemId },
-    include: { user: { select: { id: true, name: true } } },
-    orderBy: [{ thread: "asc" }, { createdAt: "asc" }],
-  });
+  let rows;
+  try {
+    rows = await prisma.comment.findMany({
+      where: { itemId },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: [{ thread: "asc" }, { createdAt: "asc" }],
+    });
+  } catch (e) {
+    if (isMissingTable(e)) return [];
+    throw e;
+  }
   return rows.map((c) => ({
     id: c.id,
     thread: c.thread,

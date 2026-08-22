@@ -3,12 +3,10 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { itemAccessWhere } from "@/lib/access";
 import { toCsv } from "@/lib/comments";
+import type { SessionUser } from "@/lib/auth";
 
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return new Response("Sign in first.", { status: 401 });
-
-  const rows = await prisma.comment.findMany({
+function load(user: SessionUser) {
+  return prisma.comment.findMany({
     where: { item: itemAccessWhere(user) },
     include: {
       user: { select: { id: true, name: true } },
@@ -16,6 +14,20 @@ export async function GET() {
     },
     orderBy: [{ createdAt: "asc" }],
   });
+}
+
+export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return new Response("Sign in first.", { status: 401 });
+
+  // Same tolerance as the item page: a database that predates commenting
+  // exports an empty sheet rather than erroring.
+  let rows: Awaited<ReturnType<typeof load>> = [];
+  try {
+    rows = await load(user);
+  } catch {
+    rows = [];
+  }
 
   const csv = toCsv(
     rows.map((c) => ({
