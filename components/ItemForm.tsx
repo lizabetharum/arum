@@ -170,14 +170,18 @@ export function ItemFormFields({
             </p>
             <ol className="mt-2 ml-4 list-decimal space-y-2">
               <li>
-                <strong>Attach it in Claude Code.</strong> Run <code>/artifacts</code>, select
-                the artifact, press <strong>Enter</strong> to attach it to the session, then ask
-                Claude to save its HTML to a file. Load that file with the picker above.
+                <strong>Ask in a Claude Code session</strong> — the web one at
+                claude.ai/code is fine, nothing to install. &ldquo;Give me the HTML for my{" "}
+                <em>[artifact name]</em> artifact as a file.&rdquo; Claude can read the
+                artifacts you own. Load the file it gives you with the picker above.
               </li>
               <li>
-                <strong>Ask Claude in any conversation.</strong> &ldquo;Give me the HTML for my{" "}
-                <em>[artifact name]</em> artifact as a file.&rdquo; Claude can read your own
-                artifacts.
+                <strong>
+                  <code>/artifacts</code>, in the Claude Code CLI or desktop app
+                </strong>{" "}
+                — that command isn&apos;t available in Claude Code on the web. Where it runs:
+                type it, arrow to the artifact, press <strong>Enter</strong> to attach it, then
+                ask Claude to save its HTML to a file.
               </li>
               <li>
                 <strong>The original file.</strong> Claude Code writes the page to an{" "}

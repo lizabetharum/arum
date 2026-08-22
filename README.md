@@ -35,32 +35,29 @@ from a Claude Code artifact.)
 
 Three routes that do work, easiest first:
 
-**1. Attach it in Claude Code** (no developer tools, no browser):
+**1. Just ask, in a Claude Code session.** This is the one that needs nothing
+installed and no developer tools. Start a session — the web one at
+[claude.ai/code](https://claude.ai/code) is fine — and say:
 
 ```
-/artifacts
+Give me the HTML for my "Velocity Arena Pathway" artifact as a file.
 ```
 
-Arrow to the artifact you want and press **Enter** — that attaches it to the
-session. (`o` opens it in a browser and `c` copies its link instead, so use
-Enter.) Then ask for the file:
-
-```
-Save the attached artifact's HTML to velocity-arena-pathway.html in this folder.
-```
-
-Claude writes the file; load it with the picker above. Needs Claude Code v2.1.208
-or later for `/artifacts`, and v2.1.216 or later for Enter to attach rather than
-open — run `claude --version` to check.
-
-Works from the artifact's URL too, if you already have the link:
+Claude can list and read the artifacts you own, and hands back a file for the
+picker. If you have the artifact's URL already, that works too:
 
 ```
 Read https://claude.ai/code/artifact/<uuid> and save its HTML to pathway.html
 ```
 
-**2. Ask Claude in any conversation.** "Give me the HTML for my *[artifact
-name]* artifact as a file." Claude can read your own artifacts directly.
+**2. `/artifacts`, if you use the Claude Code CLI or desktop app.** That command
+belongs to those surfaces — it is *not* available in Claude Code on the web,
+which answers `/artifacts isn't available in this environment`. Where it does
+run: type `/artifacts`, arrow to the artifact, press **Enter** to attach it to
+the session (`o` opens a browser, `c` copies the link — neither gets you the
+file), then ask Claude to save its HTML to a file. Needs v2.1.208 or later for
+the command and v2.1.216 or later for Enter to attach; check with
+`claude --version`.
 
 **3. The original file.** Claude Code writes the page to an `.html` file in your
 project *before* publishing it, so the clean source is often already on disk in
