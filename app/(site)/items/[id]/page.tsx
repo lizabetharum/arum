@@ -9,6 +9,7 @@ import { getComments, groupThreads } from "@/lib/comments";
 import { Comments } from "@/components/Comments";
 import { ReviewFrame } from "@/components/ReviewFrame";
 import { NotePreview } from "@/components/NotePreview";
+import { CopyLink } from "@/components/CopyLink";
 
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -48,6 +49,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
         <div className="flex gap-2">
+          <CopyLink path={`/items/${item.id}`} />
           {user.role === "admin" && (
             <Link
               href={`/admin/items/${item.id}`}

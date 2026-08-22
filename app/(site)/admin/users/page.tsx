@@ -1,10 +1,20 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { createUser, deleteUser, setUserPassword } from "@/lib/admin-actions";
+import { cancelInvite, createUser, deleteUser, resendInvite, setUserPassword } from "@/lib/admin-actions";
+import { CopyLink } from "@/components/CopyLink";
 
 const input =
   "rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
 const button = "rounded-lg bg-stone-800 text-white px-3 py-1.5 text-sm hover:bg-stone-700";
+
+/** "in 6 days" / "tomorrow" / "today" -- rounded up, so it never reads as sooner than it is. */
+function expiryWords(at: Date | null) {
+  if (!at) return "soon";
+  const days = Math.ceil((at.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return "today";
+  if (days === 1) return "tomorrow";
+  return `in ${days} days`;
+}
 
 export default async function UsersPage({
   searchParams,
@@ -31,6 +41,11 @@ export default async function UsersPage({
                 <span className="text-sm text-stone-500">{u.email}</span>
                 {u.role === "admin" && (
                   <span className="text-xs bg-stone-800 text-white rounded-full px-2 py-0.5">admin</span>
+                )}
+                {u.inviteToken && (
+                  <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2 py-0.5">
+                    invited — not signed in yet
+                  </span>
                 )}
                 <div className="ml-auto flex items-center gap-3">
                   <details className="relative">
@@ -66,6 +81,31 @@ export default async function UsersPage({
                   Projects: {u.memberships.map((m) => m.project.name).join(", ")}
                 </p>
               )}
+              {u.inviteToken && (
+                <div className="mt-3 rounded-lg bg-stone-50 border border-stone-200 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CopyLink path={`/invite/${u.inviteToken}`} label="Copy invite link" />
+                    <span className="text-xs text-stone-500">
+                      Send this to {u.name}. It lets them set their own password, works once, and
+                      expires {expiryWords(u.inviteExpiresAt)}.
+                    </span>
+                  </div>
+                  <div className="flex gap-3 mt-2">
+                    <form action={resendInvite}>
+                      <input type="hidden" name="userId" value={u.id} />
+                      <button className="text-xs text-stone-600 hover:text-stone-900 underline">
+                        New link
+                      </button>
+                    </form>
+                    <form action={cancelInvite}>
+                      <input type="hidden" name="userId" value={u.id} />
+                      <button className="text-xs text-stone-600 hover:text-stone-900 underline">
+                        Cancel invitation
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -83,10 +123,6 @@ export default async function UsersPage({
             <input name="email" type="email" required className={input} />
           </label>
           <label className="text-sm">
-            <span className="block text-xs text-stone-500 mb-1">Password (min 8)</span>
-            <input name="password" type="text" required minLength={8} className={input} />
-          </label>
-          <label className="text-sm">
             <span className="block text-xs text-stone-500 mb-1">Role</span>
             <select name="role" className={input} defaultValue="member">
               <option value="member">Member</option>
@@ -96,7 +132,9 @@ export default async function UsersPage({
           <button className={button}>Add</button>
         </form>
         <p className="text-xs text-stone-500 mt-2">
-          Share the password with them directly — new people only see projects you add them to.
+          You do not choose a password for them. Adding someone here creates a locked account and
+          an invite link to send them, and they pick their own password when they open it. They
+          only ever see the projects you add them to.
         </p>
       </section>
     </div>

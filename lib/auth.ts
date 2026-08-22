@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 
 const COOKIE = "artifact_session";
 const THIRTY_DAYS = 1000 * 60 * 60 * 24 * 30;
+const SEVEN_DAYS = 1000 * 60 * 60 * 24 * 7;
 
 export type SessionUser = {
   id: string;
@@ -21,6 +22,24 @@ export async function hashPassword(pw: string) {
 
 export async function verifyPassword(pw: string, hash: string) {
   return bcrypt.compare(pw, hash);
+}
+
+/** A fresh invite link's secret, and when it stops working. */
+export function newInvite() {
+  return {
+    inviteToken: randomBytes(24).toString("hex"),
+    inviteExpiresAt: new Date(Date.now() + SEVEN_DAYS),
+  };
+}
+
+/**
+ * A password hash nobody holds the password to. An invited account needs some
+ * hash in the column before its owner has chosen one, and this makes that
+ * placeholder unguessable rather than a shared default that would let anyone
+ * sign in as a person who has not accepted yet.
+ */
+export async function unusablePassword() {
+  return hashPassword(randomBytes(32).toString("hex"));
 }
 
 export async function createSession(userId: string) {

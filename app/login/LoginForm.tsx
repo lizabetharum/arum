@@ -3,10 +3,11 @@
 import { useActionState } from "react";
 import { loginAction, type LoginState } from "@/lib/actions";
 
-export function LoginForm() {
+export function LoginForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(loginAction, null);
   return (
     <form action={action} className="bg-white rounded-xl shadow-sm border border-stone-200 p-6 space-y-4">
+      <input type="hidden" name="next" value={next} />
       <label className="block">
         <span className="text-sm font-medium">Email</span>
         <input

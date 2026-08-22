@@ -14,7 +14,7 @@ egress and connect to Supabase normally. This is only about your own machine.
 Supabase dashboard → **SQL Editor** → **New query**. Paste all of
 `01-schema.sql`, click **Run**.
 
-Creates all 8 tables and enables Row-Level Security on each — the same lockdown
+Creates all the tables and enables Row-Level Security on each — the same lockdown
 `npm run db:push` applies. Expect "Success. No rows returned."
 
 ## 2. Create your admin account
@@ -34,6 +34,20 @@ password rather than failing.
 
 Open your deployment URL and sign in as `lizarum@gmail.com`. You'll land on an
 empty Projects page — create your first project from `/admin/projects`.
+
+## Later changes
+
+Each numbered file after `02` adds something to a database that already exists.
+Run them the same way — SQL Editor → New query → paste → **Run** — in order, and
+only the ones you have not run yet. All are safe to run twice.
+
+| File | Adds | Until you run it |
+| --- | --- | --- |
+| `03-add-comments.sql` | The `Comment` table | Comments are hidden everywhere |
+| `04-add-notes-and-images.sql` | `Item.body` | Notes save empty |
+| `05-add-invites.sql` | `User.inviteToken`, `User.inviteExpiresAt` | "Add a person" fails |
+
+`/api/health` tells you where you stand at any point.
 
 ## Keeping these in sync
 

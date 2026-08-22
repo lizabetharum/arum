@@ -16,16 +16,21 @@ datasource db {
 }
 
 model User {
-  id           String          @id @default(cuid())
-  email        String          @unique
-  name         String
-  passwordHash String
-  role         String          @default("member") // "admin" | "member"
-  memberships  ProjectMember[]
-  itemGrants   ItemGrant[]
-  comments     Comment[]
-  sessions     Session[]
-  createdAt    DateTime        @default(now())
+  id              String          @id @default(cuid())
+  email           String          @unique
+  name            String
+  passwordHash    String
+  role            String          @default("member") // "admin" | "member"
+  /// An unaccepted invitation. While these are set the account exists but has
+  /// no password anyone knows, so it cannot be signed into until the person
+  /// follows their link and chooses one. Cleared the moment they do.
+  inviteToken     String?         @unique
+  inviteExpiresAt DateTime?
+  memberships     ProjectMember[]
+  itemGrants      ItemGrant[]
+  comments        Comment[]
+  sessions        Session[]
+  createdAt       DateTime        @default(now())
 }
 
 model Session {

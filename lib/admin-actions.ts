@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireAdmin, hashPassword } from "@/lib/auth";
+import { requireAdmin, hashPassword, newInvite, unusablePassword } from "@/lib/auth";
 import { CATEGORIES, KINDS } from "@/lib/constants";
 import { cleanStoredHtml } from "@/lib/sanitize-html";
 
@@ -29,14 +29,16 @@ export async function createUser(formData: FormData) {
   await requireAdmin();
   const email = str(formData, "email").toLowerCase();
   const name = str(formData, "name");
-  const password = String(formData.get("password") ?? "");
   const role = str(formData, "role") === "admin" ? "admin" : "member";
-  if (!email || !name || password.length < 8) {
-    redirect("/admin/users?error=Email%2C%20name%2C%20and%20a%20password%20of%20at%20least%208%20characters%20are%20required.");
+  if (!email || !name) {
+    redirect("/admin/users?error=A%20name%20and%20an%20email%20address%20are%20required.");
   }
+  // No password is chosen here. The account is created locked, with an invite
+  // link, so the only person who ever knows the password is the person it
+  // belongs to -- rather than it being typed here and sent to them.
   try {
     await prisma.user.create({
-      data: { email, name, passwordHash: await hashPassword(password), role },
+      data: { email, name, role, passwordHash: await unusablePassword(), ...newInvite() },
     });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
@@ -48,12 +50,42 @@ export async function createUser(formData: FormData) {
   redirect("/admin/users");
 }
 
+/**
+ * Issue a fresh invite link, replacing any outstanding one. For a link that
+ * expired or went astray, and for someone who has forgotten their password and
+ * would rather set a new one themselves than be handed one.
+ */
+export async function resendInvite(formData: FormData) {
+  await requireAdmin();
+  const userId = str(formData, "userId");
+  await prisma.user.update({ where: { id: userId }, data: newInvite() });
+  revalidatePath("/admin/users");
+  redirect("/admin/users");
+}
+
+/** Withdraw an unaccepted invitation, leaving the account unreachable. */
+export async function cancelInvite(formData: FormData) {
+  await requireAdmin();
+  const userId = str(formData, "userId");
+  await prisma.user.update({
+    where: { id: userId },
+    data: { inviteToken: null, inviteExpiresAt: null },
+  });
+  revalidatePath("/admin/users");
+  redirect("/admin/users");
+}
+
 export async function setUserPassword(formData: FormData) {
   await requireAdmin();
   const userId = str(formData, "userId");
   const password = String(formData.get("password") ?? "");
   if (password.length < 8) redirect("/admin/users?error=Passwords%20must%20be%20at%20least%208%20characters.");
-  await prisma.user.update({ where: { id: userId }, data: { passwordHash: await hashPassword(password) } });
+  // Setting a password directly also withdraws any outstanding invite link,
+  // which would otherwise still be good for changing the password you just set.
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: await hashPassword(password), inviteToken: null, inviteExpiresAt: null },
+  });
   // Changing a password logs that person out everywhere.
   await prisma.session.deleteMany({ where: { userId } });
   redirect("/admin/users");
