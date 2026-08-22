@@ -212,6 +212,33 @@ It reports no data and no connection details, only which step is incomplete.
 | `No account with that email` at sign-in | `db:seed` hasn't run, or ran against a different database than Vercel points at. Check `.env` matches the Vercel values. |
 | Build fails | Send the build log — the app builds without a database, so a build failure is something else. |
 
+## Comments
+
+Anyone who can open an item can comment on it, and comments inherit that item's
+visibility: restrict an item and its discussion disappears with it, from the
+page and from the exports.
+
+- **On any item** — Google Doc, Sheet, Slides, link, HTML — there's a comment
+  box below it. Threads have replies, and either party can **Resolve** a thread
+  (which greys it out rather than deleting it) or **Reopen** it later.
+- **On HTML items**, select any text in the page and a **Comment** button
+  appears. The quote is highlighted, a numbered badge sits in the margin, and
+  clicking either jumps to that thread. Commenters are identified by their
+  login — there are no reviewer links or tokens to hand out.
+- **Download as spreadsheet** on any item gives a CSV of its comments; the same
+  thing at `/admin/comments.csv` gives every comment you're allowed to see,
+  across all projects. Both open directly in Sheets or Excel.
+
+Columns: Thread, Comment ID, Timestamp, Author, Comment, Status, Project, Item,
+Section, Quoted text, Prefix, Suffix. Section is the nearest heading above the
+quote, so a long document sorts by part.
+
+Anchors are the quoted words plus about 40 characters either side — not a line
+or character position — so editing one part of a page doesn't move the comments
+on another. If the quoted wording is rewritten, the thread isn't lost: it stays
+in the list with its original quote and a note under the page saying it no
+longer matches, it just has nothing left to highlight.
+
 ## Security notes
 
 - **Row-Level Security is not optional here.** Supabase publishes a REST API over

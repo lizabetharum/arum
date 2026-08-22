@@ -23,6 +23,7 @@ model User {
   role         String          @default("member") // "admin" | "member"
   memberships  ProjectMember[]
   itemGrants   ItemGrant[]
+  comments     Comment[]
   sessions     Session[]
   createdAt    DateTime        @default(now())
 }
@@ -69,6 +70,7 @@ model Item {
   restricted  Boolean     @default(false) // true: only granted users (and admins) see it
   grants      ItemGrant[]
   tags        ItemTag[]
+  comments    Comment[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -97,4 +99,39 @@ model ItemTag {
   tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([itemId, tagId])
+}
+
+/// One note from one person. Threads are flat: every note carries the thread
+/// number shown in the page margin, so a reply is another row with the same
+/// number. That mirrors the spreadsheet a reviewer sorts through, and makes the
+/// CSV export a straight dump rather than a reconstruction.
+///
+/// A note with quotedText is anchored to words inside an HTML item; one without
+/// is general comment on the item as a whole, which is all that is possible for
+/// a Google Doc or a link.
+model Comment {
+  id     String @id @default(cuid())
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Stable per item, and never reused — the number readers see in the margin.
+  thread Int
+  body   String
+  /// "open" | "resolved". Carried on every note in the thread, as the sheet does.
+  status String @default("open")
+
+  /// Nearest heading, so comments can be grouped by part of a document.
+  section String @default("")
+
+  /// The anchor: the highlighted words, plus context either side used to find
+  /// them again after the page is edited. Empty for a whole-item comment.
+  quotedText String @default("")
+  prefix     String @default("")
+  suffix     String @default("")
+
+  createdAt DateTime @default(now())
+
+  @@index([itemId, thread])
 }

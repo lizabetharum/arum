@@ -5,12 +5,16 @@ import { getAccessibleItem } from "@/lib/access";
 import { embedUrl } from "@/lib/embed";
 import { categoryLabel, kindIcon, kindLabel } from "@/lib/constants";
 import { looksLikeArtifactShell } from "@/lib/sanitize-html";
+import { getComments, groupThreads } from "@/lib/comments";
+import { Comments } from "@/components/Comments";
+import { ReviewFrame } from "@/components/ReviewFrame";
 
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
   const item = await getAccessibleItem(user, id);
   if (!item) notFound();
+  const comments = await getComments(user, id);
 
   const isGoogle = item.kind.startsWith("google_");
 
@@ -103,12 +107,25 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         </p>
       )}
       {item.kind === "html" && (
-        <iframe
-          src={`/items/${item.id}/html`}
-          sandbox="allow-scripts allow-popups"
-          className="mt-6 w-full h-[75vh] rounded-xl border border-stone-200 bg-white"
+        <ReviewFrame
+          itemId={item.id}
+          anchors={groupThreads(comments)
+            .filter((t) => t.quotedText)
+            .map((t) => ({
+              thread: t.thread,
+              quoted: t.quotedText,
+              prefix: t.notes[0].prefix,
+              suffix: t.notes[0].suffix,
+              status: t.status,
+            }))}
         />
       )}
+      <Comments
+        itemId={item.id}
+        rows={comments}
+        viewerId={user.id}
+        viewerIsAdmin={user.role === "admin"}
+      />
     </div>
   );
 }
