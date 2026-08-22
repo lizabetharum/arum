@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
-  description: "A private, searchable library of artifacts and presentations.",
+  description: "A private, searchable home for your work — notes, documents, artifacts and images, organized by project.",
   robots: { index: false, follow: false },
 };
 

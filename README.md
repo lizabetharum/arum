@@ -1,8 +1,8 @@
-# Artifact Library
+# Arum Studio
 
-A private, password-protected website for storing and presenting artifacts —
-debriefs, ideas, best practices, research, and presentations — organized by
-project and topic, and searchable.
+A private, password-protected website for your work — notes, documents,
+artifacts, images, debriefs, research — organized by project and topic, and
+searchable.
 
 ## How access works
 

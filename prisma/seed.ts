@@ -47,7 +47,7 @@ async function main() {
     await prisma.item.create({
       data: {
         projectId: project.id,
-        title: "Welcome to your Artifact Library",
+        title: "Welcome to Arum Studio",
         kind: "html",
         category: "best_practice",
         htmlContent: `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Georgia,serif;max-width:38rem;margin:4rem auto;line-height:1.6;color:#333}</style></head><body><h1>It works.</h1><p>This page is an <strong>HTML item</strong> stored in the database. From the admin area you can add Google Docs, Sheets, and Slides by URL, or paste whole HTML pages like this one.</p><p>Each project has its own members; each item can additionally be restricted to specific people.</p></body></html>`,

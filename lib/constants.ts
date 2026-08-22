@@ -1,4 +1,4 @@
-export const SITE_NAME = "Artifact Library";
+export const SITE_NAME = "Arum Studio";
 
 export const CATEGORIES = [
   { value: "debrief", label: "Debrief" },
