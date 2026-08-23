@@ -1,4 +1,4 @@
-# Arum Studio
+# Arum Solutions
 
 A private, password-protected website for your work — notes, documents,
 artifacts, images, debriefs, research — organized by project and topic, and

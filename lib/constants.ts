@@ -1,4 +1,4 @@
-export const SITE_NAME = "Arum Studio";
+export const SITE_NAME = "Arum Solutions";
 
 export const CATEGORIES = [
   { value: "debrief", label: "Debrief" },
