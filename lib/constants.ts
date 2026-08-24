@@ -11,6 +11,7 @@ export const CATEGORIES = [
 
 export const KINDS = [
   { value: "note", label: "Note", icon: "📝" },
+  { value: "markdown", label: "Markdown", icon: "📘" },
   { value: "image", label: "Image", icon: "🖼" },
   { value: "google_doc", label: "Google Doc", icon: "📄" },
   { value: "google_sheet", label: "Google Sheet", icon: "📊" },
@@ -18,6 +19,19 @@ export const KINDS = [
   { value: "html", label: "HTML page", icon: "🖥️" },
   { value: "link", label: "Link", icon: "🔗" },
 ] as const;
+
+/**
+ * Notes and Markdown documents are the same thing stored the same way: Markdown
+ * text in `body`, rendered by the same reader. They are separate kinds only
+ * because they arrive differently — a note is typed here, a Markdown document is
+ * brought in from a file — and that is worth seeing on a card.
+ */
+export function isMarkdownKind(value: string) {
+  return value === "note" || value === "markdown";
+}
+
+/** Largest Markdown document an item may hold. Text, so this is very roomy. */
+export const MAX_MARKDOWN_BYTES = 1_000_000;
 
 export function categoryLabel(value: string) {
   return CATEGORIES.find((c) => c.value === value)?.label ?? value;

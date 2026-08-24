@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getAccessibleItem } from "@/lib/access";
 import { embedUrl } from "@/lib/embed";
-import { categoryLabel, kindIcon, kindLabel } from "@/lib/constants";
+import { categoryLabel, isMarkdownKind, kindIcon, kindLabel } from "@/lib/constants";
 import { looksLikeArtifactShell } from "@/lib/sanitize-html";
 import { getComments, groupThreads } from "@/lib/comments";
 import { Comments } from "@/components/Comments";
@@ -37,9 +37,12 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </h1>
           {item.description && <p className="text-stone-500 mt-1 max-w-2xl">{item.description}</p>}
           <div className="flex flex-wrap items-center gap-1.5 mt-2 text-xs">
-            <span className="text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-              {categoryLabel(item.category)}
-            </span>
+            {/* "Other" is the default nobody chose; it earns no space here either. */}
+            {item.category !== "other" && (
+              <span className="text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                {categoryLabel(item.category)}
+              </span>
+            )}
             {item.tags.map(({ tag }) => (
               <span key={tag.id} className="text-stone-500 border border-stone-200 rounded-full px-2 py-0.5">
                 {tag.name}
@@ -50,6 +53,14 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         </div>
         <div className="flex gap-2">
           <CopyLink path={`/items/${item.id}`} />
+          {isMarkdownKind(item.kind) && item.body && (
+            <a
+              href={`/items/${item.id}/markdown`}
+              className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm hover:border-stone-500"
+            >
+              Download .md
+            </a>
+          )}
           {user.role === "admin" && (
             <Link
               href={`/admin/items/${item.id}`}
@@ -98,7 +109,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           allow="fullscreen"
         />
       )}
-      {item.kind === "note" && (
+      {isMarkdownKind(item.kind) && (
         <article className="mt-6 rounded-xl border border-stone-200 bg-white p-6">
           <NotePreview markdown={item.body} />
         </article>

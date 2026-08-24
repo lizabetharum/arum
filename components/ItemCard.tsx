@@ -10,6 +10,7 @@ import type { ItemWithMeta } from "@/lib/access";
  */
 const TONES: Record<string, { spine: string; chip: string }> = {
   note: { spine: "bg-amber-300", chip: "bg-amber-50 text-amber-900 border-amber-200" },
+  markdown: { spine: "bg-sky-300", chip: "bg-sky-50 text-sky-900 border-sky-200" },
   image: { spine: "bg-rose-300", chip: "bg-rose-50 text-rose-900 border-rose-200" },
   google_doc: { spine: "bg-blue-300", chip: "bg-blue-50 text-blue-900 border-blue-200" },
   google_sheet: { spine: "bg-emerald-300", chip: "bg-emerald-50 text-emerald-900 border-emerald-200" },

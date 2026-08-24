@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CATEGORIES, KINDS, MAX_HTML_BYTES, MAX_IMAGE_BYTES, formatBytes } from "@/lib/constants";
+import {
+  CATEGORIES,
+  KINDS,
+  MAX_HTML_BYTES,
+  MAX_IMAGE_BYTES,
+  MAX_MARKDOWN_BYTES,
+  formatBytes,
+  isMarkdownKind,
+} from "@/lib/constants";
 import { looksLikeArtifactShell } from "@/lib/sanitize-html";
 import { NotePreview } from "@/components/NotePreview";
 
@@ -49,6 +57,7 @@ export function ItemFormFields({
   const [restricted, setRestricted] = useState(defaults.restricted ?? false);
   const [granted, setGranted] = useState<string[]>(grantedIds);
   const [fileNote, setFileNote] = useState<string | null>(null);
+  const [mdNote, setMdNote] = useState<string | null>(null);
 
   // The preview lags the editor deliberately. Re-rendering a 60 KB document into
   // an iframe on every keystroke makes typing stutter; a beat of quiet is the
@@ -59,10 +68,24 @@ export function ItemFormFields({
     return () => clearTimeout(t);
   }, [html]);
 
+  async function loadMarkdown(file: File) {
+    if (file.size > MAX_MARKDOWN_BYTES) {
+      setMdNote(`That file is ${formatBytes(file.size)} — the limit is ${formatBytes(MAX_MARKDOWN_BYTES)}.`);
+      return;
+    }
+    const text = await file.text();
+    setBody(text);
+    setMdNote(`Loaded ${file.name} (${formatBytes(file.size)}). Edit it here before saving.`);
+  }
+
   const isHtml = kind === "html";
-  const isNote = kind === "note";
+  // A typed note and an imported Markdown document edit identically; only the
+  // wording and the file picker differ.
+  const isNote = isMarkdownKind(kind);
+  const isImported = kind === "markdown";
   const isImage = kind === "image";
   const htmlBytes = new Blob([html]).size;
+  const mdBytes = new Blob([body]).size;
   // Catch the wrong-document paste while it is still on screen. The outer page
   // carries data-frame-uuid; the artifact inside the iframe does not.
   const pastedTheShell = isHtml && html.length > 0 && looksLikeArtifactShell(html);
@@ -170,18 +193,38 @@ export function ItemFormFields({
         <div className="text-sm">
           <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
             <span className="text-xs text-stone-500">
-              Note — type on the left, see it on the right. Markdown works: <code>##</code>{" "}
-              headings, <code>**bold**</code>, <code>-</code> lists, <code>&gt;</code> quotes,{" "}
-              <code>`code`</code>, links.
+              {isImported ? "Markdown" : "Note"} — type on the left, see it on the right. Markdown
+              works: <code>##</code> headings, <code>**bold**</code>, <code>-</code> lists,{" "}
+              <code>&gt;</code> quotes, <code>`code`</code>, links.
             </span>
+            {body && <span className="text-xs text-stone-400">{formatBytes(mdBytes)}</span>}
           </div>
+
+          {isImported && (
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              <input
+                type="file"
+                accept=".md,.markdown,.mdown,.txt,text/markdown,text/plain"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void loadMarkdown(file);
+                }}
+                className="block text-xs text-stone-600 file:mr-3 file:rounded-lg file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:border-stone-500"
+              />
+              {mdNote && <span className="text-xs text-stone-600">{mdNote}</span>}
+            </div>
+          )}
           <div className="grid gap-3 lg:grid-cols-2">
             <textarea
               name="body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={16}
-              placeholder="What happened, what you decided, what to do next…"
+              placeholder={
+                isImported
+                  ? "Choose a .md file above, or paste the Markdown here…"
+                  : "What happened, what you decided, what to do next…"
+              }
               className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-stone-400"
             />
             <div className="rounded-lg border border-stone-300 bg-white p-4 overflow-auto max-h-[26rem]">
