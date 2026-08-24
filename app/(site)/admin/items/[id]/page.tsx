@@ -1,24 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { deleteItem, updateItem } from "@/lib/admin-actions";
+import { getItemForEdit, getProjectSections, sectionsAvailable } from "@/lib/access";
 import { ItemFormFields } from "@/components/ItemForm";
 
 export default async function AdminItemPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
-  const item = await prisma.item.findUnique({
-    where: { id },
-    include: {
-      project: { include: { members: { include: { user: { select: { id: true, name: true, email: true, role: true } } }, orderBy: { user: { name: "asc" } } } } },
-      tags: { include: { tag: true } },
-      grants: true,
-    },
-  });
+  const item = await getItemForEdit(id);
   if (!item) notFound();
-
-  const grantedIds = new Set(item.grants.map((g) => g.userId));
+  const [sections, hasSections] = await Promise.all([
+    getProjectSections(item.project.id),
+    sectionsAvailable(),
+  ]);
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -46,6 +41,7 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
               htmlContent: item.htmlContent,
               body: item.body,
               restricted: item.restricted,
+              section: item.section,
               tags: item.tags.map(({ tag }) => tag.name).join(", "),
             }}
             submitLabel="Save"
@@ -55,6 +51,8 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
               email: m.user.email,
             }))}
             grantedIds={item.grants.map((g) => g.userId)}
+            sections={sections}
+            sectionsEnabled={hasSections}
           />
         </form>
       </div>

@@ -117,6 +117,14 @@ export async function GET() {
     });
   }
 
+  if (!(await hasColumn("Item", "section"))) {
+    pending.push({
+      file: "sql/06-add-sections.sql",
+      adds: "Item.section and Item.position",
+      until: "Projects stay one ungrouped list and the Section box is hidden.",
+    });
+  }
+
   if (pending.length > 0) {
     return Response.json(
       {

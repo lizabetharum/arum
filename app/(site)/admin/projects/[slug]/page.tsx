@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { addMember, deleteProject, removeMember, updateProject } from "@/lib/admin-actions";
+import { addMember, deleteProject, moveItem, removeMember, updateProject } from "@/lib/admin-actions";
+import { getProjectItemsForAdmin, groupIntoSections, sectionsAvailable, type AdminItem } from "@/lib/access";
 import { categoryLabel, kindIcon } from "@/lib/constants";
 
 const input =
@@ -16,10 +17,13 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
     where: { slug },
     include: {
       members: { include: { user: { select: { id: true, name: true, email: true, role: true } } }, orderBy: { user: { name: "asc" } } },
-      items: { orderBy: { updatedAt: "desc" }, include: { grants: true } },
     },
   });
   if (!project) notFound();
+  const [items, canOrder] = await Promise.all([
+    getProjectItemsForAdmin(project.id),
+    sectionsAvailable(),
+  ]);
 
   const memberIds = new Set(project.members.map((m) => m.userId));
   const nonMembers = await prisma.user.findMany({
@@ -90,23 +94,84 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
             + New item
           </Link>
         </div>
-        <div className="space-y-2">
-          {project.items.map((item) => (
-            <Link
-              key={item.id}
-              href={`/admin/items/${item.id}`}
-              className="flex items-center gap-3 bg-white rounded-xl border border-stone-200 px-4 py-2.5 text-sm hover:border-stone-400"
-            >
-              <span>{kindIcon(item.kind)}</span>
-              <span className="font-medium">{item.title}</span>
-              <span className="text-xs text-stone-400">{categoryLabel(item.category)}</span>
-              {item.restricted && (
-                <span className="text-xs text-stone-400">🔒 {item.grants.length} granted</span>
+        {/*
+          Arranged here rather than on the reading page: this is the screen for
+          working on a project, and the arrows change what everyone else sees.
+        */}
+        <div className="space-y-6">
+          {groupIntoSections(items as never).map((section) => (
+            <div key={section.name || "__loose"}>
+              {section.name ? (
+                <div className="mb-2 flex items-baseline gap-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    {section.name}
+                  </h3>
+                  <span className="h-px flex-1 bg-stone-200" />
+                </div>
+              ) : (
+                items.some((i) => i.section) && (
+                  <div className="mb-2 flex items-baseline gap-3">
+                    <h3 className="text-xs uppercase tracking-wide text-stone-400">No section</h3>
+                    <span className="h-px flex-1 bg-stone-100" />
+                  </div>
+                )
               )}
-              <span className="ml-auto text-stone-400">Edit →</span>
-            </Link>
+              <div className="space-y-2">
+                {(section.items as unknown as AdminItem[]).map((item, i) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm"
+                  >
+                    <span>{kindIcon(item.kind)}</span>
+                    <Link href={`/admin/items/${item.id}`} className="font-medium hover:underline">
+                      {item.title}
+                    </Link>
+                    {item.category !== "other" && (
+                      <span className="text-xs text-stone-400">{categoryLabel(item.category)}</span>
+                    )}
+                    {item.restricted && (
+                      <span className="text-xs text-stone-400">🔒 {item.grants.length} granted</span>
+                    )}
+                    <div className="ml-auto flex items-center gap-1">
+                      {canOrder && (
+                      <form action={moveItem}>
+                        <input type="hidden" name="itemId" value={item.id} />
+                        <input type="hidden" name="direction" value="up" />
+                        <button
+                          aria-label={`Move ${item.title} up`}
+                          disabled={i === 0}
+                          className="rounded px-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:invisible"
+                        >
+                          ↑
+                        </button>
+                      </form>
+                      )}
+                      {canOrder && (
+                      <form action={moveItem}>
+                        <input type="hidden" name="itemId" value={item.id} />
+                        <input type="hidden" name="direction" value="down" />
+                        <button
+                          aria-label={`Move ${item.title} down`}
+                          disabled={i === section.items.length - 1}
+                          className="rounded px-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:invisible"
+                        >
+                          ↓
+                        </button>
+                      </form>
+                      )}
+                      <Link
+                        href={`/admin/items/${item.id}`}
+                        className="ml-2 text-stone-400 hover:text-stone-700"
+                      >
+                        Edit →
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
-          {project.items.length === 0 && <p className="text-sm text-stone-500">No items yet.</p>}
+          {items.length === 0 && <p className="text-sm text-stone-500">No items yet.</p>}
         </div>
       </section>
 

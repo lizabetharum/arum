@@ -20,6 +20,7 @@ type ItemDefaults = {
   htmlContent?: string;
   restricted?: boolean;
   tags?: string;
+  section?: string;
 };
 
 export function ItemFormFields({
@@ -27,12 +28,18 @@ export function ItemFormFields({
   submitLabel,
   members = [],
   grantedIds = [],
+  sections = [],
+  sectionsEnabled = true,
 }: {
   defaults?: ItemDefaults;
   submitLabel: string;
   /** Everyone in this item's project — the only people who could be granted it. */
   members?: Member[];
   grantedIds?: string[];
+  /** Section names already used in this project, offered for reuse. */
+  sections?: string[];
+  /** False until sql/06 has been run, when there is nowhere to store a section. */
+  sectionsEnabled?: boolean;
 }) {
   const [kind, setKind] = useState(defaults.kind ?? "note");
   const [html, setHtml] = useState(defaults.htmlContent ?? "");
@@ -133,6 +140,31 @@ export function ItemFormFields({
           <input name="tags" defaultValue={defaults.tags} placeholder="onboarding, retros, ai" className={input} />
         </label>
       </div>
+
+      {/*
+        Free text with the project's existing sections offered as suggestions:
+        typing one that already exists files the item under it, and typing a new
+        one starts a new heading. No separate step for making a section.
+      */}
+      {sectionsEnabled && (
+        <label className="text-sm">
+          <span className="block text-xs text-stone-500 mb-1">
+            Section — the heading this sits under in the project. Leave empty for none.
+          </span>
+          <input
+            name="section"
+            defaultValue={defaults.section}
+            list="known-sections"
+            placeholder={sections[0] ? `e.g. ${sections[0]}` : "e.g. Background, Pilot, Findings"}
+            className={input}
+          />
+          <datalist id="known-sections">
+            {sections.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+        </label>
+      )}
 
       {isNote && (
         <div className="text-sm">

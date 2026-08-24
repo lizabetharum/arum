@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { getProjectItems, projectAccessWhere } from "@/lib/access";
+import { getProjectItems, groupIntoSections, projectAccessWhere } from "@/lib/access";
 import { CATEGORIES } from "@/lib/constants";
 import { ItemCard } from "@/components/ItemCard";
 
@@ -85,9 +85,30 @@ export default async function ProjectPage({
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 mt-6">
-        {items.map((item) => (
-          <ItemCard key={item.id} item={item} />
+      {/*
+        Headings, then cards. A section with a name gets a rule and a count so
+        the eye can skip a whole group; the unnamed group has no heading at all,
+        so a project that has not been organised yet looks like a plain list
+        rather than like something called "Uncategorised".
+      */}
+      <div className="mt-6 space-y-8">
+        {groupIntoSections(items).map((section) => (
+          <section key={section.name || "__loose"}>
+            {section.name && (
+              <div className="mb-3 flex items-baseline gap-3">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+                  {section.name}
+                </h2>
+                <span className="text-xs text-stone-400">{section.items.length}</span>
+                <span className="h-px flex-1 bg-stone-200" />
+              </div>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {section.items.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
       {items.length === 0 && <p className="text-sm text-stone-500 mt-6">Nothing here (yet).</p>}

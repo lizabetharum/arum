@@ -77,6 +77,13 @@ model Item {
   body        String      @default("")
   // "debrief" | "idea" | "best_practice" | "research" | "presentation" | "other"
   category    String      @default("other")
+  /// Optional heading this item sits under inside its project, named by hand.
+  /// Free text rather than a fixed list so a project can be organised the way
+  /// that project actually works -- by week, by phase, by client, by whatever.
+  section     String      @default("")
+  /// Hand-set order. Items sort by this, so the first thing in a project is the
+  /// thing you decided should be first, not the thing you happened to edit last.
+  position    Int         @default(0)
   restricted  Boolean     @default(false) // true: only granted users (and admins) see it
   grants      ItemGrant[]
   tags        ItemTag[]

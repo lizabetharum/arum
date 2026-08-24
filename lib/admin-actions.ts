@@ -20,11 +20,11 @@ function slugify(name: string) {
 }
 
 /**
- * True when the failure is the invite columns not being there — sql/05 has not
- * been run against this database yet. Worth telling apart from a real fault,
- * because everything except the invite feature itself can carry on without it.
+ * True when a query failed because a column is not there — a migration in sql/
+ * has not been run against this database yet. Worth telling apart from a real
+ * fault, because everything except the feature using that column can carry on.
  */
-function isMissingInviteColumn(e: unknown) {
+function isMissingColumn(e: unknown) {
   return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2022";
 }
 
@@ -60,7 +60,7 @@ export async function createUser(formData: FormData) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       redirect("/admin/users?error=An%20account%20with%20that%20email%20already%20exists.");
     }
-    if (isMissingInviteColumn(e)) redirect(RUN_MIGRATION);
+    if (isMissingColumn(e)) redirect(RUN_MIGRATION);
     throw e;
   }
   revalidatePath("/admin/users");
@@ -78,7 +78,7 @@ export async function resendInvite(formData: FormData) {
   try {
     await prisma.user.update({ where: { id: userId }, data: newInvite(), select: { id: true } });
   } catch (e) {
-    if (isMissingInviteColumn(e)) redirect(RUN_MIGRATION);
+    if (isMissingColumn(e)) redirect(RUN_MIGRATION);
     throw e;
   }
   revalidatePath("/admin/users");
@@ -96,7 +96,7 @@ export async function cancelInvite(formData: FormData) {
       select: { id: true },
     });
   } catch (e) {
-    if (isMissingInviteColumn(e)) redirect(RUN_MIGRATION);
+    if (isMissingColumn(e)) redirect(RUN_MIGRATION);
     throw e;
   }
   revalidatePath("/admin/users");
@@ -118,7 +118,7 @@ export async function setUserPassword(formData: FormData) {
       select: { id: true },
     });
   } catch (e) {
-    if (!isMissingInviteColumn(e)) throw e;
+    if (!isMissingColumn(e)) throw e;
     // No invite columns to withdraw, so just set the password. Setting a
     // password has to keep working on a database that is behind on migrations:
     // it is how you get back in when something else has gone wrong.
@@ -229,9 +229,50 @@ async function itemDataFrom(formData: FormData) {
     url,
     htmlContent: cleanStoredHtml(String(formData.get("htmlContent") ?? "")).html,
     body: String(formData.get("body") ?? ""),
+    section: str(formData, "section"),
     restricted: formData.get("restricted") === "on",
   };
 }
+
+/**
+ * Where a new item lands: the end of its own section, or the end of the project
+ * if the section is new. Appending means adding something never reshuffles what
+ * is already arranged.
+ */
+async function currentSection(itemId: string) {
+  const row = await prisma.item.findUnique({ where: { id: itemId }, select: { section: true } });
+  return row?.section ?? "";
+}
+
+async function nextPosition(projectId: string, section: string) {
+  const last = await prisma.item.findFirst({
+    where: { projectId, ...(section ? { section } : {}) },
+    orderBy: { position: "desc" },
+    select: { position: true },
+  });
+  return (last?.position ?? 0) + 1;
+}
+
+/**
+ * Section and position come from sql/06. An update can simply leave them out
+ * when they are not there yet, so it is retried without them.
+ *
+ * A create cannot: Prisma fills in a column's schema default client-side, so
+ * every INSERT names section and position whether or not they were passed.
+ * Creating an item therefore needs the migration, and createItem says so rather
+ * than pretending otherwise.
+ */
+async function updateWithoutSections<T>(attempt: (withSections: boolean) => Promise<T>): Promise<T> {
+  try {
+    return await attempt(true);
+  } catch (e) {
+    if (!isMissingColumn(e)) throw e;
+    return attempt(false);
+  }
+}
+
+const RUN_SECTIONS_MIGRATION =
+  "Adding items needs one more database update. Run sql/06-add-sections.sql in the Supabase SQL Editor, then try again.";
 
 /** Comma-separated tag names → connectOrCreate payload. */
 function tagOps(formData: FormData) {
@@ -265,14 +306,24 @@ export async function createItem(formData: FormData) {
     : [];
   const grants = ticked.filter((id) => memberIds.includes(id));
 
-  const item = await prisma.item.create({
-    data: {
-      ...data,
-      projectId,
-      tags: { create: tagOps(formData) },
-      grants: { create: grants.map((userId) => ({ userId })) },
-    },
-  });
+  let item;
+  try {
+    item = await prisma.item.create({
+      data: {
+        ...data,
+        position: await nextPosition(projectId, data.section),
+        projectId,
+        tags: { create: tagOps(formData) },
+        grants: { create: grants.map((userId) => ({ userId })) },
+      },
+      select: { id: true },
+    });
+  } catch (e) {
+    if (!isMissingColumn(e)) throw e;
+    redirect(
+      `/admin/projects/${project.slug}/items/new?error=${encodeURIComponent(RUN_SECTIONS_MIGRATION)}`,
+    );
+  }
   revalidatePath("/", "layout");
   redirect(`/admin/items/${item.id}`);
 }
@@ -295,18 +346,66 @@ export async function updateItem(formData: FormData) {
     : [];
   const grants = ticked.filter((id) => memberIds.includes(id));
 
-  await prisma.item.update({
-    where: { id: itemId },
-    data: {
-      ...data,
-      tags: { deleteMany: {}, create: tagOps(formData) },
-      // Clearing Restricted drops the grants too: leaving them would quietly
-      // restore an old audience if it were ever switched back on.
-      grants: { deleteMany: {}, create: grants.map((userId) => ({ userId })) },
-    },
+  await updateWithoutSections(async (withSections) => {
+    const { section, ...rest } = data;
+    // Moved to a different section: send it to the end of the new one, rather
+    // than keeping a position that means nothing among its new neighbours.
+    const moved =
+      withSections && section !== (await currentSection(itemId))
+        ? { position: await nextPosition(existing.projectId, section) }
+        : {};
+    return prisma.item.update({
+      where: { id: itemId },
+      data: {
+        ...rest,
+        ...(withSections ? { section, ...moved } : {}),
+        tags: { deleteMany: {}, create: tagOps(formData) },
+        // Clearing Restricted drops the grants too: leaving them would quietly
+        // restore an old audience if it were ever switched back on.
+        grants: { deleteMany: {}, create: grants.map((userId) => ({ userId })) },
+      },
+      select: { id: true },
+    });
   });
   revalidatePath("/", "layout");
   redirect(`/admin/items/${itemId}`);
+}
+
+/**
+ * Move one item up or down among its neighbours, by swapping positions with the
+ * item next to it inside the same section. A swap rather than a renumber, so
+ * two people reordering at once cannot leave the project half-sorted.
+ */
+export async function moveItem(formData: FormData) {
+  await requireAdmin();
+  const itemId = str(formData, "itemId");
+  const up = str(formData, "direction") === "up";
+
+  const item = await prisma.item.findUnique({
+    where: { id: itemId },
+    select: { id: true, projectId: true, section: true, position: true, project: { select: { slug: true } } },
+  });
+  if (!item) redirect("/admin/projects");
+
+  const neighbour = await prisma.item.findFirst({
+    where: {
+      projectId: item.projectId,
+      section: item.section,
+      position: up ? { lt: item.position } : { gt: item.position },
+    },
+    orderBy: { position: up ? "desc" : "asc" },
+    select: { id: true, position: true },
+  });
+
+  // Already at the end of its section: nothing to swap with, so leave it be.
+  if (neighbour) {
+    await prisma.$transaction([
+      prisma.item.update({ where: { id: item.id }, data: { position: neighbour.position }, select: { id: true } }),
+      prisma.item.update({ where: { id: neighbour.id }, data: { position: item.position }, select: { id: true } }),
+    ]);
+  }
+  revalidatePath("/", "layout");
+  redirect(`/admin/projects/${item.project.slug}`);
 }
 
 export async function deleteItem(formData: FormData) {
