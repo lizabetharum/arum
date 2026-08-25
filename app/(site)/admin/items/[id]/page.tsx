@@ -2,17 +2,25 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { deleteItem, updateItem } from "@/lib/admin-actions";
-import { getItemForEdit, getProjectSections, sectionsAvailable } from "@/lib/access";
+import { getAttachedFile, getItemForEdit, getProjectSections, sectionsAvailable } from "@/lib/access";
 import { ItemFormFields } from "@/components/ItemForm";
 
-export default async function AdminItemPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminItemPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   await requireAdmin();
   const { id } = await params;
+  const { error } = await searchParams;
   const item = await getItemForEdit(id);
   if (!item) notFound();
-  const [sections, hasSections] = await Promise.all([
+  const [sections, hasSections, attached] = await Promise.all([
     getProjectSections(item.project.id),
     sectionsAvailable(),
+    getAttachedFile(item.id),
   ]);
 
   return (
@@ -29,6 +37,11 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
           </Link>
         </nav>
         <h1 className="text-xl font-semibold mb-5">Edit item</h1>
+        {error && (
+          <p className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            {error}
+          </p>
+        )}
         <form action={updateItem} className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
           <input type="hidden" name="itemId" value={item.id} />
           <ItemFormFields
@@ -42,6 +55,7 @@ export default async function AdminItemPage({ params }: { params: Promise<{ id: 
               body: item.body,
               restricted: item.restricted,
               section: item.section,
+              pdf: attached,
               tags: item.tags.map(({ tag }) => tag.name).join(", "),
             }}
             submitLabel="Save"

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAdmin, hashPassword, newInvite, unusablePassword } from "@/lib/auth";
-import { CATEGORIES, KINDS } from "@/lib/constants";
+import { CATEGORIES, KINDS, MAX_PDF_BYTES } from "@/lib/constants";
 import { cleanStoredHtml } from "@/lib/sanitize-html";
 
 function slugify(name: string) {
@@ -271,6 +271,50 @@ async function updateWithoutSections<T>(attempt: (withSections: boolean) => Prom
   }
 }
 
+/** True when a whole table is missing — a migration that creates one has not run. */
+function isMissingTable(e: unknown) {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2021";
+}
+
+const RUN_PDFS_MIGRATION =
+  "Uploading PDFs needs one more database update. Run sql/07-add-pdfs.sql in the Supabase SQL Editor, then try again. The item itself was saved.";
+
+/**
+ * Store an uploaded PDF against an item, replacing whatever was there.
+ *
+ * Nothing happens when no file was chosen, which is what keeps an existing
+ * attachment in place while the rest of an item is edited. Returns a message
+ * when it could not be stored, so the caller can say so rather than throw.
+ */
+async function savePdf(itemId: string, formData: FormData): Promise<string | null> {
+  const file = formData.get("pdfFile");
+  if (!(file instanceof File) || file.size === 0) return null;
+  if (file.size > MAX_PDF_BYTES) {
+    return `That PDF is larger than the ${Math.round(MAX_PDF_BYTES / 100_000) / 10} MB limit and was not saved.`;
+  }
+
+  const data = Buffer.from(await file.arrayBuffer());
+  const row = {
+    filename: file.name.slice(0, 200),
+    // Trusting the browser's type only so far: this route only ever serves PDFs.
+    mimeType: "application/pdf",
+    size: data.byteLength,
+    data,
+  };
+  try {
+    await prisma.itemFile.upsert({
+      where: { itemId },
+      create: { itemId, ...row },
+      update: row,
+      select: { itemId: true },
+    });
+    return null;
+  } catch (e) {
+    if (isMissingTable(e)) return RUN_PDFS_MIGRATION;
+    throw e;
+  }
+}
+
 const RUN_SECTIONS_MIGRATION =
   "Adding items needs one more database update. Run sql/06-add-sections.sql in the Supabase SQL Editor, then try again.";
 
@@ -324,8 +368,9 @@ export async function createItem(formData: FormData) {
       `/admin/projects/${project.slug}/items/new?error=${encodeURIComponent(RUN_SECTIONS_MIGRATION)}`,
     );
   }
+  const problem = await savePdf(item.id, formData);
   revalidatePath("/", "layout");
-  redirect(`/admin/items/${item.id}`);
+  redirect(`/admin/items/${item.id}${problem ? `?error=${encodeURIComponent(problem)}` : ""}`);
 }
 
 export async function updateItem(formData: FormData) {
@@ -367,8 +412,9 @@ export async function updateItem(formData: FormData) {
       select: { id: true },
     });
   });
+  const problem = await savePdf(itemId, formData);
   revalidatePath("/", "layout");
-  redirect(`/admin/items/${itemId}`);
+  redirect(`/admin/items/${itemId}${problem ? `?error=${encodeURIComponent(problem)}` : ""}`);
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   MAX_HTML_BYTES,
   MAX_IMAGE_BYTES,
   MAX_MARKDOWN_BYTES,
+  MAX_PDF_BYTES,
   formatBytes,
   isMarkdownKind,
 } from "@/lib/constants";
@@ -26,6 +27,8 @@ type ItemDefaults = {
   category?: string;
   url?: string;
   htmlContent?: string;
+  /** An already-uploaded PDF, so the edit form can say what is attached. */
+  pdf?: { filename: string; size: number } | null;
   restricted?: boolean;
   tags?: string;
   section?: string;
@@ -58,6 +61,8 @@ export function ItemFormFields({
   const [granted, setGranted] = useState<string[]>(grantedIds);
   const [fileNote, setFileNote] = useState<string | null>(null);
   const [mdNote, setMdNote] = useState<string | null>(null);
+  const [pdfNote, setPdfNote] = useState<string | null>(null);
+  const [pdfTooBig, setPdfTooBig] = useState(false);
 
   // The preview lags the editor deliberately. Re-rendering a 60 KB document into
   // an iframe on every keystroke makes typing stutter; a beat of quiet is the
@@ -78,6 +83,8 @@ export function ItemFormFields({
     setMdNote(`Loaded ${file.name} (${formatBytes(file.size)}). Edit it here before saving.`);
   }
 
+  const isPdf = kind === "pdf";
+
   const isHtml = kind === "html";
   // A typed note and an imported Markdown document edit identically; only the
   // wording and the file picker differ.
@@ -89,7 +96,7 @@ export function ItemFormFields({
   // Catch the wrong-document paste while it is still on screen. The outer page
   // carries data-frame-uuid; the artifact inside the iframe does not.
   const pastedTheShell = isHtml && html.length > 0 && looksLikeArtifactShell(html);
-  const tooLarge = isHtml && htmlBytes > MAX_HTML_BYTES;
+  const tooLarge = (isHtml && htmlBytes > MAX_HTML_BYTES) || (isPdf && pdfTooBig);
 
   /**
    * Read an image into a data: URI.
@@ -261,6 +268,47 @@ export function ItemFormFields({
             </div>
           )}
           <input type="hidden" name="imageData" value={image.startsWith("data:") ? image : ""} />
+        </div>
+      )}
+
+      {isPdf && (
+        <div className="text-sm">
+          <span className="block text-xs text-stone-500 mb-1">
+            PDF — choose a file (up to {formatBytes(MAX_PDF_BYTES)}). It is stored here and read
+            in the browser, so there is nothing else to click through to.
+          </span>
+          <input
+            type="file"
+            name="pdfFile"
+            accept=".pdf,application/pdf"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) {
+                setPdfNote(null);
+                setPdfTooBig(false);
+                return;
+              }
+              // Checked here so an oversized file is refused while it is still
+              // on screen, rather than failing as a bare error mid-upload.
+              const over = file.size > MAX_PDF_BYTES;
+              setPdfTooBig(over);
+              setPdfNote(
+                over
+                  ? `${file.name} is ${formatBytes(file.size)} — the limit is ${formatBytes(MAX_PDF_BYTES)}. Try compressing it, or store it as a Link.`
+                  : `${file.name} (${formatBytes(file.size)}) ready to save.`,
+              );
+            }}
+            className="block w-full text-xs text-stone-600 file:mr-3 file:rounded-lg file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:border-stone-500"
+          />
+          {pdfNote && (
+            <p className={`mt-1 text-xs ${pdfTooBig ? "text-red-600" : "text-stone-600"}`}>{pdfNote}</p>
+          )}
+          {defaults.pdf && !pdfNote && (
+            <p className="mt-1 text-xs text-stone-500">
+              Attached: {defaults.pdf.filename || "document.pdf"} ({formatBytes(defaults.pdf.size)}).
+              Choosing a file replaces it; leaving this empty keeps it.
+            </p>
+          )}
         </div>
       )}
 

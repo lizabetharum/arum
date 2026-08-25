@@ -12,6 +12,7 @@ export const CATEGORIES = [
 export const KINDS = [
   { value: "note", label: "Note", icon: "📝" },
   { value: "markdown", label: "Markdown", icon: "📘" },
+  { value: "pdf", label: "PDF", icon: "📕" },
   { value: "image", label: "Image", icon: "🖼" },
   { value: "google_doc", label: "Google Doc", icon: "📄" },
   { value: "google_sheet", label: "Google Sheet", icon: "📊" },
@@ -65,6 +66,17 @@ export const MAX_HTML_BYTES = 3_800_000;
  * library like this actually holds, will not.
  */
 export const MAX_IMAGE_BYTES = 2_000_000;
+
+/**
+ * Largest PDF an item may hold.
+ *
+ * The file is sent as part of the form, so it counts against the same 4 MB
+ * server action body limit as everything else in next.config.ts — and Vercel
+ * caps a serverless request body at 4.5 MB regardless. Unlike an image, a PDF
+ * travels as raw bytes rather than base64, so there is no inflation to allow
+ * for; the gap left here is for the rest of the form.
+ */
+export const MAX_PDF_BYTES = 3_500_000;
 
 export function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;

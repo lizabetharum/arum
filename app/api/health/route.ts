@@ -125,6 +125,14 @@ export async function GET() {
     });
   }
 
+  if (!(await hasTable("ItemFile"))) {
+    pending.push({
+      file: "sql/07-add-pdfs.sql",
+      adds: "the ItemFile table",
+      until: "Uploading a PDF is refused; everything else is unaffected.",
+    });
+  }
+
   if (pending.length > 0) {
     return Response.json(
       {

@@ -86,6 +86,7 @@ model Item {
   position    Int         @default(0)
   restricted  Boolean     @default(false) // true: only granted users (and admins) see it
   grants      ItemGrant[]
+  file        ItemFile?
   tags        ItemTag[]
   comments    Comment[]
   createdAt   DateTime    @default(now())
@@ -151,4 +152,20 @@ model Comment {
   createdAt DateTime @default(now())
 
   @@index([itemId, thread])
+}
+
+/// The bytes of an uploaded PDF, kept in their own table on purpose.
+///
+/// A document runs to megabytes, and every project page, search and card list
+/// reads whole Item rows. Holding the bytes here means those queries never
+/// touch them: they are fetched only by the one route that serves the file.
+model ItemFile {
+  itemId    String   @id
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  /// The name it was uploaded under, so it can be handed back the same way.
+  filename  String   @default("")
+  mimeType  String   @default("application/pdf")
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
 }

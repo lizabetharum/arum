@@ -259,3 +259,19 @@ export async function getItemForEdit(id: string) {
     return row && { ...row, section: "" };
   }
 }
+
+/**
+ * What PDF is attached to an item, without reading the bytes. Returns null when
+ * there is none, and also before sql/07 has been run.
+ */
+export async function getAttachedFile(itemId: string) {
+  try {
+    return await prisma.itemFile.findUnique({
+      where: { itemId },
+      select: { filename: true, size: true },
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2021") return null;
+    throw e;
+  }
+}

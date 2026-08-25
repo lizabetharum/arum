@@ -53,6 +53,14 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         </div>
         <div className="flex gap-2">
           <CopyLink path={`/items/${item.id}`} />
+          {item.kind === "pdf" && (
+            <a
+              href={`/items/${item.id}/file?download=1`}
+              className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm hover:border-stone-500"
+            >
+              Download PDF
+            </a>
+          )}
           {isMarkdownKind(item.kind) && item.body && (
             <a
               href={`/items/${item.id}/markdown`}
@@ -101,6 +109,26 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
       </div>
+
+      {item.kind === "pdf" && (
+        <object
+          data={`/items/${item.id}/file`}
+          type="application/pdf"
+          className="mt-6 h-[80vh] w-full rounded-xl border border-stone-200 bg-white"
+        >
+          {/* Shown when the browser has no built-in PDF viewer, which is the
+              normal case on phones. */}
+          <div className="p-6 text-sm text-stone-600">
+            <p>This browser will not display the PDF inline.</p>
+            <a
+              href={`/items/${item.id}/file?download=1`}
+              className="mt-2 inline-block rounded-lg bg-stone-800 px-3 py-1.5 text-white hover:bg-stone-700"
+            >
+              Download the PDF
+            </a>
+          </div>
+        </object>
+      )}
 
       {isGoogle && item.url && (
         <iframe
