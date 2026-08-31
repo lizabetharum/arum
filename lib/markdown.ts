@@ -7,9 +7,11 @@
  * be kept correct, and it means one fewer dependency to track for a feature
  * whose whole job is "let me type something down".
  *
- * It covers what people actually use in notes. Anything outside that set is
- * shown as the characters that were typed, which is the honest failure: you can
- * see your text, it just isn't styled.
+ * It covers what people actually use in notes: headings, bold and italic,
+ * bulleted and numbered lists, blockquotes, horizontal rules, code spans and
+ * fences, links, and pipe tables. Anything outside that set is shown as the
+ * characters that were typed, which is the honest failure: you can see your
+ * text, it just isn't styled.
  */
 
 const escapeHtml = (s: string) =>
@@ -35,6 +37,69 @@ function inline(text: string): string {
   );
 }
 
+/**
+ * Split one table row into cells.
+ *
+ * Outer pipes are optional, as they are in every Markdown dialect people
+ * actually type, and a backslash-escaped pipe is a pipe rather than a cell
+ * boundary — which is how a cell holds a value like `a \| b`.
+ */
+function tableCells(row: string): string[] {
+  const trimmed = row.trim().replace(/^\|/, "").replace(/\|$/, "");
+  const out: string[] = [];
+  let cell = "";
+  for (let i = 0; i < trimmed.length; i++) {
+    if (trimmed[i] === "\\" && trimmed[i + 1] === "|") {
+      cell += "|";
+      i++;
+    } else if (trimmed[i] === "|") {
+      out.push(cell.trim());
+      cell = "";
+    } else {
+      cell += trimmed[i];
+    }
+  }
+  out.push(cell.trim());
+  return out;
+}
+
+/**
+ * The `|---|:--:|---:|` line under a table's header. It is what tells a row of
+ * pipes apart from a sentence that happens to contain one, so a paragraph is
+ * never mistaken for a table.
+ */
+function isTableDivider(line: string) {
+  return line.includes("|") && line.includes("-") && /^[\s|:-]+$/.test(line);
+}
+
+function alignmentOf(cell: string) {
+  const left = cell.startsWith(":");
+  const right = cell.endsWith(":");
+  if (left && right) return "center";
+  return right ? "right" : "left";
+}
+
+const TABLE_WRAP = '<div class="my-4 overflow-x-auto">';
+const TABLE = '<table class="w-full border-collapse text-left text-sm">';
+const TH = "border-b-2 border-stone-300 px-3 py-2 font-semibold text-stone-700 align-bottom";
+const TD = "border-b border-stone-100 px-3 py-2 align-top";
+
+function renderTable(header: string[], aligns: string[], rows: string[][]): string {
+  const align = (i: number) => `text-${aligns[i] ?? "left"}`;
+  const head = header
+    .map((c, i) => `<th class="${TH} ${align(i)}">${inline(c)}</th>`)
+    .join("");
+  const body = rows
+    .map((row) => {
+      // Short rows are padded and long ones trimmed, so a table with one
+      // ragged line still lines up instead of collapsing.
+      const cells = header.map((_, i) => row[i] ?? "");
+      return `<tr>${cells.map((c, i) => `<td class="${TD} ${align(i)}">${inline(c)}</td>`).join("")}</tr>`;
+    })
+    .join("");
+  return `${TABLE_WRAP}${TABLE}<thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
 export function renderNote(markdown: string): string {
   const lines = escapeHtml(markdown).split(/\r?\n/);
   const out: string[] = [];
@@ -55,7 +120,8 @@ export function renderNote(markdown: string): string {
     }
   };
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (/^```/.test(line.trim())) {
       closePara();
       closeList();
@@ -88,6 +154,22 @@ export function renderNote(markdown: string): string {
         list = want;
       }
       out.push(`<li>${inline((bullet ?? numbered)![1])}</li>`);
+      continue;
+    }
+
+    // A table: this line has pipes and the next is the divider.
+    if (line.includes("|") && i + 1 < lines.length && isTableDivider(lines[i + 1])) {
+      closePara();
+      closeList();
+      const header = tableCells(line);
+      const aligns = tableCells(lines[i + 1]).map(alignmentOf);
+      i++;
+      const rows: string[][] = [];
+      while (i + 1 < lines.length && lines[i + 1].includes("|") && lines[i + 1].trim() !== "") {
+        rows.push(tableCells(lines[i + 1]));
+        i++;
+      }
+      out.push(renderTable(header, aligns, rows));
       continue;
     }
 

@@ -202,7 +202,8 @@ export function ItemFormFields({
             <span className="text-xs text-stone-500">
               {isImported ? "Markdown" : "Note"} — type on the left, see it on the right. Markdown
               works: <code>##</code> headings, <code>**bold**</code>, <code>-</code> lists,{" "}
-              <code>&gt;</code> quotes, <code>`code`</code>, links.
+              <code>&gt;</code> quotes, <code>`code`</code>, links, and{" "}
+              <code>| pipe | tables |</code> with a <code>|---|---|</code> line under the header.
             </span>
             {body && <span className="text-xs text-stone-400">{formatBytes(mdBytes)}</span>}
           </div>
