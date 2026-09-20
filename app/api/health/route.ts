@@ -133,6 +133,14 @@ export async function GET() {
     });
   }
 
+  if (!(await hasTable("ItemShare"))) {
+    pending.push({
+      file: "sql/08-add-share-links.sql",
+      adds: "the ItemShare table",
+      until: "Share links cannot be created; every item stays private.",
+    });
+  }
+
   if (pending.length > 0) {
     return Response.json(
       {

@@ -23,6 +23,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Everything except the pages a signed-out person is supposed to reach
-  // (sign in, accepting an invite), the API, and Next's own asset routes.
-  matcher: ["/((?!login|invite|api|_next/static|_next/image|favicon.ico).*)"],
+  // (sign in, accepting an invite, a shared item), the API, and Next's own
+  // asset routes. "shared" rather than "s", so this does not also swallow
+  // /search — the pattern matches any path that starts with the word.
+  matcher: ["/((?!login|invite|shared|api|_next/static|_next/image|favicon.ico).*)"],
 };
