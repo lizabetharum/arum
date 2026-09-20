@@ -464,9 +464,9 @@ export async function shareItemAction(formData: FormData) {
   const itemId = str(formData, "itemId");
   const made = await createShare(itemId, str(formData, "expiry"));
   revalidatePath("/", "layout");
-  redirect(
-    `/items/${itemId}${made ? "" : `?error=${encodeURIComponent(RUN_SHARES_MIGRATION)}`}`,
-  );
+  // Back to the page the panel was used on, since it now appears on two.
+  const back = str(formData, "returnTo") === "edit" ? `/admin/items/${itemId}` : `/items/${itemId}`;
+  redirect(`${back}${made ? "" : `?error=${encodeURIComponent(RUN_SHARES_MIGRATION)}`}`);
 }
 
 /** Withdraw an item's share link. The link stops working immediately. */
@@ -475,7 +475,7 @@ export async function unshareItemAction(formData: FormData) {
   const itemId = str(formData, "itemId");
   await revokeShare(itemId);
   revalidatePath("/", "layout");
-  redirect(`/items/${itemId}`);
+  redirect(str(formData, "returnTo") === "edit" ? `/admin/items/${itemId}` : `/items/${itemId}`);
 }
 
 export async function deleteItem(formData: FormData) {

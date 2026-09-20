@@ -22,10 +22,13 @@ export function SharePanel({
   itemId,
   state,
   restricted,
+  returnTo = "view",
 }: {
   itemId: string;
   state: ShareState;
   restricted: boolean;
+  /** Which page this panel is on, so its buttons come back here. */
+  returnTo?: "view" | "edit";
 }) {
   if (!state.available) {
     return (
@@ -55,6 +58,8 @@ export function SharePanel({
             <CopyLink path={`/shared/${share.token}`} label="Copy share link" />
             <form action={unshareItemAction}>
               <input type="hidden" name="itemId" value={itemId} />
+              <input type="hidden" name="returnTo" value={returnTo} />
+            <input type="hidden" name="returnTo" value={returnTo} />
               <button className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:border-red-400">
                 Stop sharing
               </button>
@@ -62,6 +67,7 @@ export function SharePanel({
           </div>
           <form action={shareItemAction} className="mt-3 flex flex-wrap items-center gap-2">
             <input type="hidden" name="itemId" value={itemId} />
+            <input type="hidden" name="returnTo" value={returnTo} />
             <select name="expiry" defaultValue="30" className={select}>
               {EXPIRY_CHOICES.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -88,6 +94,7 @@ export function SharePanel({
           )}
           <form action={shareItemAction} className="mt-3 flex flex-wrap items-center gap-2">
             <input type="hidden" name="itemId" value={itemId} />
+            <input type="hidden" name="returnTo" value={returnTo} />
             <select name="expiry" defaultValue="30" className={select}>
               {EXPIRY_CHOICES.map((c) => (
                 <option key={c.value} value={c.value}>
