@@ -5,6 +5,7 @@ import { getAccessibleItem } from "@/lib/access";
 import { embedUrl } from "@/lib/embed";
 import { categoryLabel, isMarkdownKind, kindIcon, kindLabel } from "@/lib/constants";
 import { looksLikeArtifactShell } from "@/lib/sanitize-html";
+import { stripMarkdown } from "@/lib/markdown";
 import { getComments, groupThreads } from "@/lib/comments";
 import { Comments } from "@/components/Comments";
 import { ReviewFrame } from "@/components/ReviewFrame";
@@ -35,7 +36,11 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           <h1 className="text-2xl font-semibold">
             {kindIcon(item.kind)} {item.title}
           </h1>
-          {item.description && <p className="text-stone-500 mt-1 max-w-2xl">{item.description}</p>}
+          {item.description && (
+            <div className="mt-1 max-w-2xl">
+              <NotePreview markdown={item.description} tone="muted" />
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-1.5 mt-2 text-xs">
             {/* "Other" is the default nobody chose; it earns no space here either. */}
             {item.category !== "other" && (
@@ -146,7 +151,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       {item.kind === "image" && item.url && (
         <figure className="mt-6 rounded-xl border border-stone-200 bg-white p-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.url} alt={item.description || item.title} className="mx-auto max-w-full rounded" />
+          <img src={item.url} alt={stripMarkdown(item.description) || item.title} className="mx-auto max-w-full rounded" />
         </figure>
       )}
 

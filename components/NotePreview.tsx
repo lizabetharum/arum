@@ -6,16 +6,28 @@ import { renderNote } from "@/lib/markdown";
  * renderNote escapes its input before formatting it, so what reaches
  * dangerouslySetInnerHTML contains only the tags that function produced — never
  * markup someone typed. See lib/markdown.ts.
+ *
+ * `tone="muted"` is for a description sitting under a title, where the text is
+ * secondary to the heading above it. The colour is picked here rather than
+ * passed in as a class, because two competing Tailwind colour classes resolve
+ * by stylesheet order, not by the order they appear in the attribute.
  */
-export function NotePreview({ markdown }: { markdown: string }) {
+export function NotePreview({
+  markdown,
+  tone = "default",
+}: {
+  markdown: string;
+  tone?: "default" | "muted";
+}) {
   return (
     <div
       className={[
-        "prose-note text-sm leading-relaxed text-stone-800",
+        "prose-note text-sm leading-relaxed",
+        tone === "muted" ? "text-stone-600" : "text-stone-800",
         // A document's own "#" heading becomes an h2, because the page already
         // shows the title as the h1. The sizes step down from there so a long
         // document has a shape you can skim rather than a wall of bold.
-        "[&>*:first-child]:mt-0",
+        "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         "[&_h2]:mt-6 [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-stone-900",
         "[&_h3]:mt-5 [&_h3]:mb-1.5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-stone-900",
         "[&_h4]:mt-4 [&_h4]:mb-1 [&_h4]:text-xs [&_h4]:font-semibold [&_h4]:uppercase [&_h4]:tracking-wide [&_h4]:text-stone-500",

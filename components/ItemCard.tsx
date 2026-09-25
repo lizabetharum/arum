@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { categoryLabel, kindIcon, kindLabel } from "@/lib/constants";
+import { stripMarkdown } from "@/lib/markdown";
 import type { ItemWithMeta } from "@/lib/access";
 
 /**
@@ -55,7 +56,9 @@ export function ItemCard({ item, showProject = false }: { item: ItemWithMeta; sh
             )}
           </h3>
           {item.description && (
-            <p className="mt-0.5 line-clamp-2 text-sm text-stone-500">{item.description}</p>
+            <p className="mt-0.5 line-clamp-2 text-sm text-stone-500">
+              {stripMarkdown(item.description)}
+            </p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
             <span className={`rounded-full border px-2 py-0.5 ${t.chip}`}>{kindLabel(item.kind)}</span>

@@ -141,8 +141,12 @@ export function ItemFormFields({
         <input name="title" required defaultValue={defaults.title} className={input} />
       </label>
       <label className="block text-sm">
-        <span className="block text-xs text-stone-500 mb-1">Description (optional)</span>
-        <textarea name="description" rows={2} defaultValue={defaults.description} className={input} />
+        <span className="block text-xs text-stone-500 mb-1">
+          Description (optional). Markdown works: <code>**bold**</code>, <code>-</code> lists,{" "}
+          <code>&gt;</code> quotes, links. Cards and search results show the words without the
+          formatting.
+        </span>
+        <textarea name="description" rows={4} defaultValue={defaults.description} className={input} />
       </label>
       <div className="flex flex-wrap gap-4">
         <label className="text-sm">

@@ -202,3 +202,33 @@ export function renderNote(markdown: string): string {
   if (inCode) out.push("</code></pre>");
   return out.join("\n");
 }
+
+/**
+ * Markdown source reduced to the words in it, on one line.
+ *
+ * Descriptions are written as Markdown but shown in places that clamp or
+ * truncate them: item cards, search results, list rows. Rendering block
+ * elements inside a two-line clamp breaks those layouts, and showing the raw
+ * source puts asterisks and hyphens in front of the reader. This gives those
+ * places the text without the syntax. The result goes into a React text node,
+ * so it is escaped on output.
+ */
+export function stripMarkdown(markdown: string): string {
+  return markdown
+    .replace(/```[\s\S]*?```/g, " ") // fenced code blocks
+    .replace(/`([^`]+)`/g, "$1") // code spans
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1") // images keep their alt text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // links keep their label
+    .replace(/^\s{0,3}\|?[\s:|-]*-[\s:|-]*\|[\s:|-]*$/gm, " ") // table rules
+    .replace(/^\s{0,3}\|(.*)\|\s*$/gm, (_, row: string) => row.replace(/\|/g, " ")) // table rows
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "") // headings
+    .replace(/^\s{0,3}>\s?/gm, "") // blockquotes
+    .replace(/^\s{0,3}([-*_]\s*){3,}$/gm, " ") // horizontal rules
+    .replace(/^\s{0,3}[-*+]\s+/gm, "") // bullets
+    .replace(/^\s{0,3}\d+[.)]\s+/gm, "") // numbered items
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
