@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { addComment } from "@/lib/comment-actions";
 import { SubmitButton } from "@/components/SubmitButton";
+import { Button } from "@/components/ui/button";
 
 type Anchor = { thread: number; quoted: string; prefix: string; suffix: string; status: string };
 
@@ -97,17 +98,13 @@ export function ReviewFrame({ itemId, anchors }: { itemId: string; anchors: Anch
             rows={2}
             autoFocus
             placeholder="What did you notice?"
-            className="w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            className="w-full rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
           <div className="mt-2 flex gap-2">
             <SubmitButton pendingLabel="Posting…">Comment</SubmitButton>
-            <button
-              type="button"
-              onClick={() => setPending(null)}
-              className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm hover:border-stone-500"
-            >
+            <Button type="button" variant="outline" onClick={() => setPending(null)}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}

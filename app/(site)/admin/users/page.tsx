@@ -1,13 +1,20 @@
+import { Fragment } from "react";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { cancelInvite, createUser, deleteUser, resendInvite, setUserPassword } from "@/lib/admin-actions";
+import { createUser } from "@/lib/admin-actions";
+import { CircleAlertIcon, TriangleAlertIcon } from "lucide-react";
 import { CopyLink } from "@/components/CopyLink";
-import { ConfirmButton } from "@/components/ConfirmButton";
 import { SubmitButton } from "@/components/SubmitButton";
+import { UserActions } from "@/components/UserActions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const input =
-  "rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
 
 /** "in 6 days" / "tomorrow" / "today" -- rounded up, so it never reads as sooner than it is. */
 function expiryWords(at: Date | null) {
@@ -52,141 +59,124 @@ export default async function UsersPage({
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-xl font-semibold mb-4">People</h1>
-        {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-        {needsInviteMigration && (
-          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-            <p className="font-medium">Invite links are not switched on yet.</p>
-            <p className="mt-1">
-              Run <code className="font-mono">sql/05-add-invites.sql</code> in the Supabase SQL
-              Editor. Until then, adding a person will fail — use <strong>Reset password</strong> on
-              an existing account to let someone in.
-            </p>
-          </div>
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h1 className="text-xl font-semibold">People</h1>
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {users.length} {users.length === 1 ? "person" : "people"}
+          </p>
+        </div>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <CircleAlertIcon aria-hidden />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-        <div className="space-y-3">
-          {users.map((u) => (
-            <div key={u.id} className="bg-white rounded-xl border border-stone-200 p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium">{u.name}</span>
-                <span className="text-sm text-stone-500">{u.email}</span>
-                {u.role === "admin" && (
-                  <span className="text-xs bg-stone-800 text-white rounded-full px-2 py-0.5">admin</span>
-                )}
-                {u.inviteToken && (
-                  <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2 py-0.5">
-                    invited — not signed in yet
-                  </span>
-                )}
-                <div className="ml-auto flex items-center gap-3">
-                  <details className="relative">
-                    <summary className="text-sm text-stone-600 hover:text-stone-900 cursor-pointer list-none">
-                      Reset password
-                    </summary>
-                    <form
-                      action={setUserPassword}
-                      className="absolute right-0 z-10 mt-1 bg-white border border-stone-200 rounded-xl shadow-md p-3 flex gap-2"
-                    >
-                      <input type="hidden" name="userId" value={u.id} />
-                      <input
-                        name="password"
-                        type="text"
-                        required
-                        minLength={8}
-                        placeholder="New password"
-                        className={input}
-                      />
-                      <SubmitButton pendingLabel="Setting…">Set</SubmitButton>
-                    </form>
-                  </details>
-                  {u.id !== admin.id && (
-                    <form action={deleteUser}>
-                      <input type="hidden" name="userId" value={u.id} />
-                      <ConfirmButton
-                        title={`Delete ${u.name}?`}
-                        description={`${u.email} is removed from every project and can no longer sign in. Their comments are deleted too. This can't be undone.`}
-                        confirmLabel="Delete person"
-                      >
-                        Delete
-                      </ConfirmButton>
-                    </form>
-                  )}
-                </div>
-              </div>
-              {u.memberships.length > 0 && (
-                <p className="text-xs text-stone-500 mt-2">
-                  Projects: {u.memberships.map((m) => m.project.name).join(", ")}
-                </p>
-              )}
-              {u.inviteToken && (
-                <div className="mt-3 rounded-lg bg-stone-50 border border-stone-200 p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <CopyLink path={`/invite/${u.inviteToken}`} label="Copy invite link" />
-                    <span className="text-xs text-stone-500">
-                      Send this to {u.name}. It lets them set their own password, works once, and
-                      expires {expiryWords(u.inviteExpiresAt)}.
-                    </span>
-                  </div>
-                  <div className="flex gap-3 mt-2">
-                    <form action={resendInvite}>
-                      <input type="hidden" name="userId" value={u.id} />
-                      <SubmitButton
-                        variant="link"
-                        size="xs"
-                        className="h-auto px-0 text-xs text-stone-600 underline"
-                        pendingLabel="Making link…"
-                      >
-                        New link
-                      </SubmitButton>
-                    </form>
-                    <form action={cancelInvite}>
-                      <input type="hidden" name="userId" value={u.id} />
-                      <ConfirmButton
-                        variant="link"
-                        size="xs"
-                        className="h-auto px-0 text-xs text-stone-600 underline"
-                        title={`Cancel ${u.name}'s invitation?`}
-                        description="The link you sent stops working. Their account stays, but nobody can sign in to it until you send a new link or set a password."
-                        confirmLabel="Cancel invitation"
-                        pendingLabel="Canceling…"
-                      >
-                        Cancel invitation
-                      </ConfirmButton>
-                    </form>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+        {needsInviteMigration && (
+          <Alert className="mb-4 border-amber-300 bg-amber-50 text-amber-900">
+            <TriangleAlertIcon aria-hidden />
+            <AlertTitle>Invite links are not switched on yet.</AlertTitle>
+            <AlertDescription className="text-amber-900">
+              <p>
+                Run <code className="font-mono">sql/05-add-invites.sql</code> in the Supabase SQL
+                Editor. Until then, adding a person will fail — use <strong>Reset password</strong>{" "}
+                on an existing account to let someone in.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="pl-4">Name</TableHead>
+                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead className="hidden lg:table-cell">Projects</TableHead>
+                <TableHead className="w-12 pr-4">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((u) => {
+                const projects = u.memberships.map((m) => m.project.name).join(", ");
+                return (
+                  <Fragment key={u.id}>
+                    <TableRow className={u.inviteToken ? "border-b-0" : undefined}>
+                      <TableCell className="pl-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{u.name}</span>
+                          {u.role === "admin" && <Badge>admin</Badge>}
+                          {u.inviteToken && (
+                            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">
+                              invited, not signed in yet
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground md:hidden">{u.email}</div>
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground md:table-cell">{u.email}</TableCell>
+                      <TableCell className="hidden max-w-72 truncate text-muted-foreground lg:table-cell" title={projects}>
+                        {projects || <span className="italic text-stone-400">none</span>}
+                      </TableCell>
+                      <TableCell className="pr-4 text-right">
+                        <UserActions
+                          user={{ id: u.id, name: u.name, email: u.email }}
+                          invited={Boolean(u.inviteToken)}
+                          isSelf={u.id === admin.id}
+                        />
+                      </TableCell>
+                    </TableRow>
+                    {u.inviteToken && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={4} className="whitespace-normal px-4 pt-0 pb-3">
+                          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/60 px-3 py-2">
+                            <CopyLink path={`/invite/${u.inviteToken}`} label="Copy invite link" />
+                            <span className="text-xs text-muted-foreground">
+                              Send this to {u.name}. It lets them set their own password, works
+                              once, and expires {expiryWords(u.inviteExpiresAt)}.
+                            </span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       </section>
 
-      <section className="bg-white rounded-xl border border-stone-200 p-5">
-        <h2 className="font-medium mb-3">Add a person</h2>
-        <form action={createUser} className="flex flex-wrap gap-2 items-end">
-          <label className="text-sm">
-            <span className="block text-xs text-stone-500 mb-1">Name</span>
-            <input name="name" required className={input} />
-          </label>
-          <label className="text-sm">
-            <span className="block text-xs text-stone-500 mb-1">Email</span>
-            <input name="email" type="email" required className={input} />
-          </label>
-          <label className="text-sm">
-            <span className="block text-xs text-stone-500 mb-1">Role</span>
-            <select name="role" className={input} defaultValue="member">
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
-          </label>
-          <SubmitButton pendingLabel="Adding…">Add</SubmitButton>
-        </form>
-        <p className="text-xs text-stone-500 mt-2">
-          You do not choose a password for them. Adding someone here creates a locked account and
-          an invite link to send them, and they pick their own password when they open it. They
-          only ever see the projects you add them to.
-        </p>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Add a person</CardTitle>
+          <CardDescription>
+            You do not choose a password for them. Adding someone here creates a locked account and
+            an invite link to send them, and they pick their own password when they open it. They
+            only ever see the projects you add them to.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createUser} className="flex flex-wrap items-end gap-3">
+            <div className="min-w-44 flex-1 space-y-1.5">
+              <Label htmlFor="new-name">Name</Label>
+              <Input id="new-name" name="name" required autoComplete="off" />
+            </div>
+            <div className="min-w-56 flex-1 space-y-1.5">
+              <Label htmlFor="new-email">Email</Label>
+              <Input id="new-email" name="email" type="email" required autoComplete="off" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-role">Role</Label>
+              <NativeSelect id="new-role" name="role" defaultValue="member">
+                <NativeSelectOption value="member">Member</NativeSelectOption>
+                <NativeSelectOption value="admin">Admin</NativeSelectOption>
+              </NativeSelect>
+            </div>
+            <SubmitButton pendingLabel="Adding…">Add person</SubmitButton>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,11 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
-import { createProject } from "@/lib/admin-actions";
 import { AdminProjectList, type AdminProjectRow } from "@/components/AdminProjectList";
-import { SubmitButton } from "@/components/SubmitButton";
-
-const input =
-  "rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
+import { NewProjectDialog } from "@/components/NewProjectDialog";
 
 const DAY = 86_400_000;
 
@@ -60,28 +56,7 @@ export default async function AdminProjectsPage() {
           </p>
         </div>
 
-        <details className="relative shrink-0 group">
-          <summary className="list-none cursor-pointer select-none rounded-lg bg-stone-800 px-3 py-1.5 text-sm text-white hover:bg-stone-700 [&::-webkit-details-marker]:hidden">
-            <span className="group-open:hidden">+ New project</span>
-            <span className="hidden group-open:inline">Close</span>
-          </summary>
-          <div className="absolute right-0 top-full z-10 mt-2 w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-stone-200 bg-white p-4 shadow-lg">
-            <h2 className="font-medium mb-3 text-sm">New project</h2>
-            <form action={createProject} className="space-y-3">
-              <label className="block text-sm">
-                <span className="block text-xs text-stone-500 mb-1">Name</span>
-                <input name="name" required autoComplete="off" className={`${input} w-full`} />
-              </label>
-              <label className="block text-sm">
-                <span className="block text-xs text-stone-500 mb-1">Description (optional)</span>
-                <input name="description" autoComplete="off" className={`${input} w-full`} />
-              </label>
-              <SubmitButton className="w-full" pendingLabel="Creating…">
-                Create project
-              </SubmitButton>
-            </form>
-          </div>
-        </details>
+        <NewProjectDialog />
       </div>
 
       <AdminProjectList projects={rows} />

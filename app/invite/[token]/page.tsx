@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SITE_NAME } from "@/lib/constants";
 import { findInvite } from "@/lib/invite-actions";
 import { InviteForm } from "./InviteForm";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = { title: "Accept your invitation" };
 
@@ -21,7 +22,8 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <InviteForm token={token} email={invite.email} />
           </>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6 text-center">
+          <Card className="mt-5">
+            <CardContent className="text-center">
             <p className="text-sm text-stone-700">
               This invitation has expired or has already been used.
             </p>
@@ -32,7 +34,8 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               </Link>
               .
             </p>
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </main>

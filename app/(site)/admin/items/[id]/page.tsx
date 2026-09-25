@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/auth";
 import { deleteItem, updateItem } from "@/lib/admin-actions";
 import { getAttachedFile, getItemForEdit, getProjectSections, sectionsAvailable } from "@/lib/access";
 import { ItemFormFields } from "@/components/ItemForm";
+import { TriangleAlertIcon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmButton } from "@/components/ConfirmButton";
 
 export default async function AdminItemPage({
@@ -39,11 +41,12 @@ export default async function AdminItemPage({
         </nav>
         <h1 className="text-xl font-semibold mb-5">Edit item</h1>
         {error && (
-          <p className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-            {error}
-          </p>
+          <Alert className="mb-4 border-amber-300 bg-amber-50 text-amber-900">
+            <TriangleAlertIcon aria-hidden />
+            <AlertDescription className="text-amber-900">{error}</AlertDescription>
+          </Alert>
         )}
-        <form action={updateItem} className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
+        <form action={updateItem} className="rounded-xl border border-border bg-card p-5 space-y-4">
           <input type="hidden" name="itemId" value={item.id} />
           <ItemFormFields
             defaults={{
@@ -72,7 +75,11 @@ export default async function AdminItemPage({
         </form>
       </div>
 
-      <section className="border-t border-stone-200 pt-4">
+      <section className="rounded-xl border border-red-200 bg-card p-4">
+        <h2 className="text-sm font-semibold">Danger zone</h2>
+        <p className="mb-3 mt-0.5 text-sm text-muted-foreground">
+          Deleting an item removes it for everyone in {item.project.name}.
+        </p>
         <form action={deleteItem}>
           <input type="hidden" name="itemId" value={item.id} />
           <ConfirmButton

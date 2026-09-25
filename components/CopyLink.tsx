@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { CheckIcon, CopyIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /**
  * Copies a link to the clipboard and says so.
@@ -28,12 +30,9 @@ export function CopyLink({ path, label = "Copy link" }: { path: string; label?: 
   }
 
   return (
-    <button
-      type="button"
-      onClick={copy}
-      className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm hover:border-stone-500"
-    >
-      {copied ? "Copied ✓" : label}
-    </button>
+    <Button type="button" variant="outline" size="sm" onClick={copy}>
+      {copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
+      {copied ? "Copied" : label}
+    </Button>
   );
 }

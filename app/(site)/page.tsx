@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { itemAccessWhere, projectAccessWhere } from "@/lib/access";
 import { ItemCard } from "@/components/ItemCard";
+import { Button } from "@/components/ui/button";
 
 export default async function HomePage() {
   const user = await requireUser();
@@ -29,17 +30,22 @@ export default async function HomePage() {
           // telling her she hasn't been "added to" any would be misleading, and
           // it is the first thing she sees on a freshly set up library.
           user.role === "admin" ? (
-            <p className="text-stone-500 text-sm">
-              No projects yet.{" "}
-              <Link href="/admin/projects" className="underline hover:text-stone-800">
-                Create your first one
-              </Link>
-              .
-            </p>
+            <div className="rounded-xl border border-dashed border-stone-300 px-6 py-12 text-center">
+              <p className="font-medium">No projects yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                A project holds the notes, documents and pages for one piece of work.
+              </p>
+              <Button asChild size="sm" className="mt-4">
+                <Link href="/admin/projects">Create your first project</Link>
+              </Button>
+            </div>
           ) : (
-            <p className="text-stone-500 text-sm">
-              You haven&apos;t been added to any projects yet.
-            </p>
+            <div className="rounded-xl border border-dashed border-stone-300 px-6 py-12 text-center">
+              <p className="font-medium">Nothing here yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                You haven&apos;t been added to any projects yet. Whoever invited you can add you.
+              </p>
+            </div>
           )
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -47,7 +53,7 @@ export default async function HomePage() {
               <Link
                 key={p.id}
                 href={`/projects/${p.slug}`}
-                className="block bg-white rounded-xl border border-stone-200 p-5 hover:border-stone-400 hover:shadow-sm transition"
+                className="block rounded-xl border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md"
               >
                 <h2 className="font-medium">{p.name}</h2>
                 {p.description && (

@@ -5,12 +5,15 @@ import { requireAdmin } from "@/lib/auth";
 import { addMember, deleteProject, moveItem, removeMember, updateProject } from "@/lib/admin-actions";
 import { getProjectItemsForAdmin, groupIntoSections, sectionsAvailable, type AdminItem } from "@/lib/access";
 import { categoryLabel, kindIcon } from "@/lib/constants";
+import { ArrowDownIcon, ArrowUpIcon, ExternalLinkIcon, PlusIcon } from "lucide-react";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { SubmitButton } from "@/components/SubmitButton";
 
-const input =
-  "rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
-const button = "rounded-lg bg-stone-800 text-white px-3 py-1.5 text-sm hover:bg-stone-700";
 
 export default async function AdminProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   await requireAdmin();
@@ -36,34 +39,49 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
 
   return (
     <div className="space-y-8">
-      <section className="bg-white rounded-xl border border-stone-200 p-5">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <h1 className="text-xl font-semibold">{project.name}</h1>
-          <Link href={`/projects/${project.slug}`} className="text-sm text-stone-500 hover:text-stone-800">
-            View as member →
+      <div>
+        <nav className="mb-2 text-sm text-muted-foreground">
+          <Link href="/admin/projects" className="hover:text-foreground">
+            ← All projects
           </Link>
+        </nav>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">{project.name}</h1>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/projects/${project.slug}`}>
+              View as member
+              <ExternalLinkIcon aria-hidden />
+            </Link>
+          </Button>
         </div>
-        <form action={updateProject} className="flex flex-wrap gap-2 items-end">
-          <input type="hidden" name="projectId" value={project.id} />
-          <label className="text-sm">
-            <span className="block text-xs text-stone-500 mb-1">Name</span>
-            <input name="name" required defaultValue={project.name} className={input} />
-          </label>
-          <label className="text-sm flex-1 min-w-48">
-            <span className="block text-xs text-stone-500 mb-1">Description</span>
-            <input name="description" defaultValue={project.description} className={`${input} w-full`} />
-          </label>
-          <SubmitButton pendingLabel="Saving…">Save</SubmitButton>
-        </form>
-      </section>
+        <Card>
+          <CardContent>
+            <form action={updateProject} className="flex flex-wrap items-end gap-3">
+              <input type="hidden" name="projectId" value={project.id} />
+              <div className="min-w-48 space-y-1.5">
+                <Label htmlFor="project-name">Name</Label>
+                <Input id="project-name" name="name" required defaultValue={project.name} />
+              </div>
+              <div className="min-w-48 flex-1 space-y-1.5">
+                <Label htmlFor="project-description">Description</Label>
+                <Input id="project-description" name="description" defaultValue={project.description} />
+              </div>
+              <SubmitButton pendingLabel="Saving…">Save</SubmitButton>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
 
       <section>
-        <h2 className="font-medium mb-3">Members</h2>
-        <div className="space-y-2">
+        <h2 className="mb-3 font-semibold">
+          Members{" "}
+          <span className="text-sm font-normal text-muted-foreground">{project.members.length}</span>
+        </h2>
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {project.members.map((m) => (
-            <div key={m.id} className="flex items-center gap-3 bg-white rounded-xl border border-stone-200 px-4 py-2.5 text-sm">
+            <div key={m.id} className="flex items-center gap-3 px-4 py-2 text-sm">
               <span className="font-medium">{m.user.name}</span>
-              <span className="text-stone-500">{m.user.email}</span>
+              <span className="truncate text-muted-foreground">{m.user.email}</span>
               <form action={removeMember} className="ml-auto">
                 <input type="hidden" name="membershipId" value={m.id} />
                 <ConfirmButton
@@ -81,19 +99,21 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
             </div>
           ))}
           {project.members.length === 0 && (
-            <p className="text-sm text-stone-500">No members yet — only admins can see this project.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              No members yet. Only admins can see this project.
+            </p>
           )}
         </div>
         {nonMembers.length > 0 && (
-          <form action={addMember} className="flex gap-2 mt-3">
+          <form action={addMember} className="mt-3 flex flex-wrap gap-2">
             <input type="hidden" name="projectId" value={project.id} />
-            <select name="userId" className={input}>
+            <NativeSelect name="userId" aria-label="Person to add" className="min-w-64">
               {nonMembers.map((u) => (
-                <option key={u.id} value={u.id}>
+                <NativeSelectOption key={u.id} value={u.id}>
                   {u.name} ({u.email})
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
             <SubmitButton pendingLabel="Adding…">Add member</SubmitButton>
           </form>
         )}
@@ -101,10 +121,15 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
 
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-medium">Items</h2>
-          <Link href={`/admin/projects/${project.slug}/items/new`} className={button}>
-            + New item
-          </Link>
+          <h2 className="font-semibold">
+            Items <span className="text-sm font-normal text-muted-foreground">{items.length}</span>
+          </h2>
+          <Button asChild size="sm">
+            <Link href={`/admin/projects/${project.slug}/items/new`}>
+              <PlusIcon aria-hidden />
+              New item
+            </Link>
+          </Button>
         </div>
         {/*
           Arranged here rather than on the reading page: this is the screen for
@@ -128,11 +153,11 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
                   </div>
                 )
               )}
-              <div className="space-y-2">
+              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
                 {(section.items as unknown as AdminItem[]).map((item, i) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm"
+                    className="flex items-center gap-3 px-4 py-2 text-sm transition-colors hover:bg-muted/50"
                   >
                     <span>{kindIcon(item.kind)}</span>
                     <Link href={`/admin/items/${item.id}`} className="font-medium hover:underline">
@@ -149,45 +174,62 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
                       <form action={moveItem}>
                         <input type="hidden" name="itemId" value={item.id} />
                         <input type="hidden" name="direction" value="up" />
-                        <button
+                        <Button
+                          type="submit"
+                          variant="ghost"
+                          size="icon-xs"
                           aria-label={`Move ${item.title} up`}
                           disabled={i === 0}
-                          className="rounded px-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:invisible"
+                          className="text-muted-foreground disabled:invisible"
                         >
-                          ↑
-                        </button>
+                          <ArrowUpIcon />
+                        </Button>
                       </form>
                       )}
                       {canOrder && (
                       <form action={moveItem}>
                         <input type="hidden" name="itemId" value={item.id} />
                         <input type="hidden" name="direction" value="down" />
-                        <button
+                        <Button
+                          type="submit"
+                          variant="ghost"
+                          size="icon-xs"
                           aria-label={`Move ${item.title} down`}
                           disabled={i === section.items.length - 1}
-                          className="rounded px-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:invisible"
+                          className="text-muted-foreground disabled:invisible"
                         >
-                          ↓
-                        </button>
+                          <ArrowDownIcon />
+                        </Button>
                       </form>
                       )}
-                      <Link
-                        href={`/admin/items/${item.id}`}
-                        className="ml-2 text-stone-400 hover:text-stone-700"
-                      >
-                        Edit →
-                      </Link>
+                      <Button asChild variant="ghost" size="xs" className="ml-1 text-muted-foreground">
+                        <Link href={`/admin/items/${item.id}`}>Edit</Link>
+                      </Button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
-          {items.length === 0 && <p className="text-sm text-stone-500">No items yet.</p>}
+          {items.length === 0 && (
+            <div className="rounded-xl border border-dashed border-stone-300 px-4 py-10 text-center">
+              <p className="text-sm text-muted-foreground">No items yet.</p>
+              <Button asChild size="sm" variant="outline" className="mt-3">
+                <Link href={`/admin/projects/${project.slug}/items/new`}>
+                  <PlusIcon aria-hidden />
+                  Add the first one
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
-      <section className="border-t border-stone-200 pt-4">
+      <section className="rounded-xl border border-red-200 bg-card p-4">
+        <h2 className="text-sm font-semibold">Danger zone</h2>
+        <p className="mb-3 mt-0.5 text-sm text-muted-foreground">
+          Deleting a project removes every item in it for everyone.
+        </p>
         <form action={deleteProject}>
           <input type="hidden" name="projectId" value={project.id} />
           <ConfirmButton

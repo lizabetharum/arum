@@ -72,7 +72,7 @@ export function AdminProjectList({ projects }: { projects: AdminProjectRow[] }) 
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => e.key === "Escape" && setQ("")}
             placeholder="Filter projects…"
-            className="w-full rounded-lg border border-stone-300 bg-white pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            className="h-8 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         </div>
 

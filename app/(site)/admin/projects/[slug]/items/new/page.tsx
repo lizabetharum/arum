@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { createItem } from "@/lib/admin-actions";
 import { getProjectSections, sectionsAvailable } from "@/lib/access";
 import { ItemFormFields } from "@/components/ItemForm";
+import { TriangleAlertIcon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default async function NewItemPage({
   params,
@@ -42,11 +44,12 @@ export default async function NewItemPage({
       </nav>
       <h1 className="text-xl font-semibold mb-5">Add an item</h1>
       {error && (
-        <p className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          {error}
-        </p>
+        <Alert className="mb-4 border-amber-300 bg-amber-50 text-amber-900">
+          <TriangleAlertIcon aria-hidden />
+          <AlertDescription className="text-amber-900">{error}</AlertDescription>
+        </Alert>
       )}
-      <form action={createItem} className="bg-white rounded-xl border border-stone-200 p-5 space-y-4">
+      <form action={createItem} className="rounded-xl border border-border bg-card p-5 space-y-4">
         <input type="hidden" name="projectId" value={project.id} />
         <ItemFormFields
           submitLabel="Create item"

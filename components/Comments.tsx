@@ -110,7 +110,7 @@ export function Comments({
                     name="body"
                     required
                     placeholder="Reply…"
-                    className="flex-1 rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+                    className="flex-1 rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   />
                   <SubmitButton variant="outline" pendingLabel="Sending…">
                     Reply
@@ -132,7 +132,7 @@ export function Comments({
             required
             rows={2}
             placeholder="What did you notice?"
-            className="w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            className="w-full rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         </label>
         <SubmitButton className="mt-2" pendingLabel="Posting…">

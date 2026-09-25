@@ -1,39 +1,43 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { projectAccessWhere } from "@/lib/access";
 import { logoutAction } from "@/lib/actions";
 import { SITE_NAME } from "@/lib/constants";
+import { QuickFind } from "@/components/QuickFind";
+import { UserMenu } from "@/components/UserMenu";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+  const projects = await prisma.project.findMany({
+    where: projectAccessWhere(user),
+    orderBy: { name: "asc" },
+    select: { slug: true, name: true },
+  });
   return (
     <div className="min-h-screen">
-      <header className="bg-white border-b border-stone-200">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4">
-          <Link href="/" className="font-semibold whitespace-nowrap">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2.5">
+          <Link href="/" className="whitespace-nowrap font-semibold tracking-tight">
             {SITE_NAME}
           </Link>
-          <form action="/search" method="GET" className="flex-1 max-w-md">
-            <input
-              name="q"
-              type="search"
-              placeholder="Search titles, descriptions, topics…"
-              className="w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-            />
-          </form>
-          <nav className="ml-auto flex items-center gap-3 text-sm">
+          <div className="flex-1">
+            <QuickFind projects={projects} />
+          </div>
+          <nav className="ml-auto flex items-center gap-1 text-sm">
             {user.role === "admin" && (
-              <Link href="/admin" className="text-stone-600 hover:text-stone-900">
+              <Link
+                href="/admin"
+                className="rounded-md px-2.5 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
                 Admin
               </Link>
             )}
-            <span className="text-stone-400 hidden sm:inline">{user.name}</span>
-            <form action={logoutAction}>
-              <button className="text-stone-600 hover:text-stone-900">Sign out</button>
-            </form>
+            <UserMenu name={user.name} email={user.email} signOut={logoutAction} />
           </nav>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
     </div>
   );
 }

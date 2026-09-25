@@ -16,7 +16,7 @@ import { NotePreview } from "@/components/NotePreview";
 import { SubmitButton } from "@/components/SubmitButton";
 
 const input =
-  "w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
+  "w-full rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export type Member = { id: string; name: string; email: string };
 
@@ -222,7 +222,7 @@ export function ItemFormFields({
                   const file = e.target.files?.[0];
                   if (file) void loadMarkdown(file);
                 }}
-                className="block text-xs text-stone-600 file:mr-3 file:rounded-lg file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:border-stone-500"
+                className="block text-xs text-stone-600 file:mr-3 file:h-8 file:rounded-lg file:border file:border-input file:bg-card file:px-3 file:text-sm file:font-medium file:transition-colors file:hover:bg-muted"
               />
               {mdNote && <span className="text-xs text-stone-600">{mdNote}</span>}
             </div>
@@ -238,9 +238,9 @@ export function ItemFormFields({
                   ? "Choose a .md file above, or paste the Markdown here…"
                   : "What happened, what you decided, what to do next…"
               }
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-stone-400"
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
-            <div className="rounded-lg border border-stone-300 bg-white p-4 overflow-auto max-h-[26rem]">
+            <div className="rounded-lg border border-input bg-card p-4 overflow-auto max-h-[26rem]">
               {body.trim() ? (
                 <NotePreview markdown={body} />
               ) : (
@@ -264,7 +264,7 @@ export function ItemFormFields({
               const file = e.target.files?.[0];
               if (file) void loadImage(file);
             }}
-            className="block w-full text-xs text-stone-600 file:mr-3 file:rounded-lg file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:border-stone-500"
+            className="block w-full text-xs text-stone-600 file:mr-3 file:h-8 file:rounded-lg file:border file:border-input file:bg-card file:px-3 file:text-sm file:font-medium file:transition-colors file:hover:bg-muted"
           />
           {imageNote && <p className="mt-1 text-xs text-stone-600">{imageNote}</p>}
           {image && (
@@ -304,7 +304,7 @@ export function ItemFormFields({
                   : `${file.name} (${formatBytes(file.size)}) ready to save.`,
               );
             }}
-            className="block w-full text-xs text-stone-600 file:mr-3 file:rounded-lg file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:border-stone-500"
+            className="block w-full text-xs text-stone-600 file:mr-3 file:h-8 file:rounded-lg file:border file:border-input file:bg-card file:px-3 file:text-sm file:font-medium file:transition-colors file:hover:bg-muted"
           />
           {pdfNote && (
             <p className={`mt-1 text-xs ${pdfTooBig ? "text-red-600" : "text-stone-600"}`}>{pdfNote}</p>
@@ -340,9 +340,9 @@ export function ItemFormFields({
                 setFileNote(null);
               }}
               spellCheck={false}
-              className="h-[62vh] w-full rounded-lg border border-stone-300 px-3 py-2 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-stone-400"
+              className="h-[62vh] w-full rounded-lg border border-input bg-card px-3 py-2 font-mono text-xs leading-relaxed outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
-            <div className="relative h-[62vh] rounded-lg border border-stone-300 bg-white overflow-hidden">
+            <div className="relative h-[62vh] rounded-lg border border-input bg-card overflow-hidden">
               <span className="absolute right-2 top-2 z-10 rounded bg-stone-800/75 px-1.5 py-0.5 text-[10px] text-white">
                 Preview
               </span>
@@ -383,7 +383,7 @@ export function ItemFormFields({
                 const file = e.target.files?.[0];
                 if (file) void loadFile(file);
               }}
-              className="block text-xs text-stone-600 file:mr-3 file:rounded-lg file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:border-stone-500"
+              className="block text-xs text-stone-600 file:mr-3 file:h-8 file:rounded-lg file:border file:border-input file:bg-card file:px-3 file:text-sm file:font-medium file:transition-colors file:hover:bg-muted"
             />
             {fileNote && <span className="text-xs text-stone-600">{fileNote}</span>}
           </div>
