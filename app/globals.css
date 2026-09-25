@@ -1,9 +1,73 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+/*
+ * shadcn's tokens, mapped onto the stone palette the site already used, so
+ * the components read as part of the same site rather than a neutral-grey
+ * kit dropped on top. Light only: the library is a reading surface.
+ */
 :root {
   color-scheme: light;
+  --background: oklch(97% 0.001 106.424); /* stone-100, the page */
+  --foreground: oklch(26.8% 0.007 34.298); /* stone-800 */
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(26.8% 0.007 34.298);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(26.8% 0.007 34.298);
+  --primary: oklch(26.8% 0.007 34.298); /* stone-800 */
+  --primary-foreground: oklch(98.5% 0.001 106.423);
+  --secondary: oklch(97% 0.001 106.424); /* stone-100 */
+  --secondary-foreground: oklch(26.8% 0.007 34.298);
+  --muted: oklch(97% 0.001 106.424);
+  --muted-foreground: oklch(55.3% 0.013 58.071); /* stone-500 */
+  --accent: oklch(97% 0.001 106.424);
+  --accent-foreground: oklch(21.6% 0.006 56.043);
+  --destructive: oklch(57.7% 0.245 27.325); /* red-600 */
+  --border: oklch(92.3% 0.003 48.717); /* stone-200 */
+  --input: oklch(86.9% 0.005 56.366); /* stone-300 */
+  --ring: oklch(70.9% 0.01 56.259); /* stone-400 */
+  --radius: 0.625rem;
 }
 
-body {
-  @apply bg-stone-100 text-stone-800 antialiased;
+@theme inline {
+  /* next/font puts --font-montserrat on <html> at runtime; @theme inline
+     writes this var() straight into the utility, so it resolves there. */
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
 }

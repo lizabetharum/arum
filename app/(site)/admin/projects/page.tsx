@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { createProject } from "@/lib/admin-actions";
 import { AdminProjectList, type AdminProjectRow } from "@/components/AdminProjectList";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const input =
   "rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
@@ -75,9 +76,9 @@ export default async function AdminProjectsPage() {
                 <span className="block text-xs text-stone-500 mb-1">Description (optional)</span>
                 <input name="description" autoComplete="off" className={`${input} w-full`} />
               </label>
-              <button className="w-full rounded-lg bg-stone-800 text-white px-3 py-1.5 text-sm hover:bg-stone-700">
+              <SubmitButton className="w-full" pendingLabel="Creating…">
                 Create project
-              </button>
+              </SubmitButton>
             </form>
           </div>
         </details>

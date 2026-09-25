@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { SITE_NAME } from "@/lib/constants";
 import "./globals.css";
+import { Montserrat } from "next/font/google";
+import { FlashToaster } from "@/components/FlashToaster";
+import { readFlash } from "@/lib/flash";
+
+const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat" });
 
 export const metadata: Metadata = {
   title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
@@ -8,10 +13,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={montserrat.variable}>
+      <body>
+        {children}
+        <FlashToaster flash={await readFlash()} />
+      </body>
     </html>
   );
 }

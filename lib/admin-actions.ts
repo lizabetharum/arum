@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin, hashPassword, newInvite, unusablePassword } from "@/lib/auth";
 import { CATEGORIES, KINDS, MAX_PDF_BYTES } from "@/lib/constants";
 import { cleanStoredHtml } from "@/lib/sanitize-html";
+import { flash } from "@/lib/flash";
 
 function slugify(name: string) {
   return (
@@ -63,6 +64,7 @@ export async function createUser(formData: FormData) {
     if (isMissingColumn(e)) redirect(RUN_MIGRATION);
     throw e;
   }
+  await flash(`Added ${name}. Copy their invite link below and send it to them.`);
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
@@ -81,6 +83,7 @@ export async function resendInvite(formData: FormData) {
     if (isMissingColumn(e)) redirect(RUN_MIGRATION);
     throw e;
   }
+  await flash("New invite link made. The old one no longer works.");
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
@@ -99,6 +102,7 @@ export async function cancelInvite(formData: FormData) {
     if (isMissingColumn(e)) redirect(RUN_MIGRATION);
     throw e;
   }
+  await flash("Invitation canceled.");
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
@@ -126,6 +130,7 @@ export async function setUserPassword(formData: FormData) {
   }
   // Changing a password logs that person out everywhere.
   await prisma.session.deleteMany({ where: { userId } });
+  await flash("Password set. They have been signed out everywhere.");
   redirect("/admin/users");
 }
 
@@ -133,7 +138,8 @@ export async function deleteUser(formData: FormData) {
   const admin = await requireAdmin();
   const userId = str(formData, "userId");
   if (userId === admin.id) redirect("/admin/users?error=You%20can%27t%20delete%20your%20own%20account.");
-  await prisma.user.delete({ where: { id: userId }, select: { id: true } });
+  const gone = await prisma.user.delete({ where: { id: userId }, select: { name: true } });
+  await flash(`Deleted ${gone.name}.`);
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
@@ -150,6 +156,7 @@ export async function createProject(formData: FormData) {
     slug = `${slugify(name)}-${n}`;
   }
   await prisma.project.create({ data: { name, slug, description: str(formData, "description") } });
+  await flash(`Created ${name}.`);
   revalidatePath("/admin/projects");
   redirect(`/admin/projects/${slug}`);
 }
@@ -163,13 +170,18 @@ export async function updateProject(formData: FormData) {
     where: { id },
     data: { name, description: str(formData, "description") },
   });
+  await flash("Project saved.");
   revalidatePath("/", "layout");
   redirect(`/admin/projects/${project.slug}`);
 }
 
 export async function deleteProject(formData: FormData) {
   await requireAdmin();
-  await prisma.project.delete({ where: { id: str(formData, "projectId") } });
+  const gone = await prisma.project.delete({
+    where: { id: str(formData, "projectId") },
+    select: { name: true },
+  });
+  await flash(`Deleted ${gone.name} and its items.`);
   revalidatePath("/", "layout");
   redirect("/admin/projects");
 }
@@ -185,6 +197,7 @@ export async function addMember(formData: FormData) {
     update: {},
     create: { userId, projectId },
   });
+  await flash("Member added.");
   revalidatePath("/", "layout");
   redirect(`/admin/projects/${project.slug}`);
 }
@@ -202,6 +215,7 @@ export async function removeMember(formData: FormData) {
   await prisma.itemGrant.deleteMany({
     where: { userId: membership.userId, item: { projectId: membership.projectId } },
   });
+  await flash("Member removed.");
   revalidatePath("/", "layout");
   redirect(`/admin/projects/${membership.project.slug}`);
 }
@@ -369,6 +383,7 @@ export async function createItem(formData: FormData) {
     );
   }
   const problem = await savePdf(item.id, formData);
+  if (!problem) await flash("Item created.");
   revalidatePath("/", "layout");
   redirect(`/admin/items/${item.id}${problem ? `?error=${encodeURIComponent(problem)}` : ""}`);
 }
@@ -413,6 +428,7 @@ export async function updateItem(formData: FormData) {
     });
   });
   const problem = await savePdf(itemId, formData);
+  if (!problem) await flash("Item saved.");
   revalidatePath("/", "layout");
   redirect(`/admin/items/${itemId}${problem ? `?error=${encodeURIComponent(problem)}` : ""}`);
 }
@@ -460,6 +476,7 @@ export async function deleteItem(formData: FormData) {
     where: { id: str(formData, "itemId") },
     include: { project: true },
   });
+  await flash(`Deleted ${item.title}.`);
   revalidatePath("/", "layout");
   redirect(`/admin/projects/${item.project.slug}`);
 }

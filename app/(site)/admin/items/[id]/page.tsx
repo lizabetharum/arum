@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { deleteItem, updateItem } from "@/lib/admin-actions";
 import { getAttachedFile, getItemForEdit, getProjectSections, sectionsAvailable } from "@/lib/access";
 import { ItemFormFields } from "@/components/ItemForm";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export default async function AdminItemPage({
   params,
@@ -74,7 +75,13 @@ export default async function AdminItemPage({
       <section className="border-t border-stone-200 pt-4">
         <form action={deleteItem}>
           <input type="hidden" name="itemId" value={item.id} />
-          <button className="text-sm text-red-600 hover:text-red-800">Delete this item</button>
+          <ConfirmButton
+            title={`Delete ${item.title}?`}
+            description="Its attached file and comments go with it. This can't be undone."
+            confirmLabel="Delete item"
+          >
+            Delete this item
+          </ConfirmButton>
         </form>
       </section>
     </div>

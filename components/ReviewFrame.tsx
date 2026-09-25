@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { addComment } from "@/lib/comment-actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type Anchor = { thread: number; quoted: string; prefix: string; suffix: string; status: string };
 
@@ -99,9 +100,7 @@ export function ReviewFrame({ itemId, anchors }: { itemId: string; anchors: Anch
             className="w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
           />
           <div className="mt-2 flex gap-2">
-            <button className="rounded-lg bg-stone-800 text-white px-4 py-1.5 text-sm hover:bg-stone-700">
-              Comment
-            </button>
+            <SubmitButton pendingLabel="Posting…">Comment</SubmitButton>
             <button
               type="button"
               onClick={() => setPending(null)}

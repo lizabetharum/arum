@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { addMember, deleteProject, moveItem, removeMember, updateProject } from "@/lib/admin-actions";
 import { getProjectItemsForAdmin, groupIntoSections, sectionsAvailable, type AdminItem } from "@/lib/access";
 import { categoryLabel, kindIcon } from "@/lib/constants";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const input =
   "rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
@@ -51,7 +53,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
             <span className="block text-xs text-stone-500 mb-1">Description</span>
             <input name="description" defaultValue={project.description} className={`${input} w-full`} />
           </label>
-          <button className={button}>Save</button>
+          <SubmitButton pendingLabel="Saving…">Save</SubmitButton>
         </form>
       </section>
 
@@ -64,7 +66,17 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
               <span className="text-stone-500">{m.user.email}</span>
               <form action={removeMember} className="ml-auto">
                 <input type="hidden" name="membershipId" value={m.id} />
-                <button className="text-red-600 hover:text-red-800">Remove</button>
+                <ConfirmButton
+                  variant="ghost"
+                  size="xs"
+                  className="text-destructive"
+                  title={`Remove ${m.user.name} from ${project.name}?`}
+                  description="They lose access to this project and to any restricted items in it you had shared with them. You can add them back later, but restricted items will need sharing again."
+                  confirmLabel="Remove"
+                  pendingLabel="Removing…"
+                >
+                  Remove
+                </ConfirmButton>
               </form>
             </div>
           ))}
@@ -82,7 +94,7 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
                 </option>
               ))}
             </select>
-            <button className={button}>Add member</button>
+            <SubmitButton pendingLabel="Adding…">Add member</SubmitButton>
           </form>
         )}
       </section>
@@ -178,9 +190,17 @@ export default async function AdminProjectPage({ params }: { params: Promise<{ s
       <section className="border-t border-stone-200 pt-4">
         <form action={deleteProject}>
           <input type="hidden" name="projectId" value={project.id} />
-          <button className="text-sm text-red-600 hover:text-red-800">
+          <ConfirmButton
+            title={`Delete ${project.name}?`}
+            description={
+              items.length === 0
+                ? "The project has no items. This can't be undone."
+                : `This also deletes all ${items.length} item${items.length === 1 ? "" : "s"} in it, with their files and comments. This can't be undone.`
+            }
+            confirmLabel="Delete project"
+          >
             Delete this project and all its items
-          </button>
+          </ConfirmButton>
         </form>
       </section>
     </div>

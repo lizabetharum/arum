@@ -1,5 +1,7 @@
 import { addComment, setThreadStatus, deleteComment } from "@/lib/comment-actions";
 import { groupThreads, type CommentRow } from "@/lib/comments";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { SubmitButton } from "@/components/SubmitButton";
 
 function when(d: Date) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -61,9 +63,9 @@ export function Comments({
                   <input type="hidden" name="itemId" value={itemId} />
                   <input type="hidden" name="thread" value={t.thread} />
                   <input type="hidden" name="status" value={resolved ? "open" : "resolved"} />
-                  <button className="text-xs text-stone-500 hover:text-stone-800">
+                  <SubmitButton variant="ghost" size="xs" className="text-stone-500">
                     {resolved ? "Reopen" : "Resolve"}
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
 
@@ -82,9 +84,16 @@ export function Comments({
                       {(n.authorId === viewerId || viewerIsAdmin) && (
                         <form action={deleteComment} className="ml-auto">
                           <input type="hidden" name="commentId" value={n.id} />
-                          <button className="text-xs text-stone-400 hover:text-red-600">
+                          <ConfirmButton
+                            variant="ghost"
+                            size="xs"
+                            className="text-stone-400 hover:text-destructive"
+                            title="Delete this comment?"
+                            description="This can't be undone."
+                            confirmLabel="Delete comment"
+                          >
                             Delete
-                          </button>
+                          </ConfirmButton>
                         </form>
                       )}
                     </div>
@@ -103,9 +112,9 @@ export function Comments({
                     placeholder="Reply…"
                     className="flex-1 rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
                   />
-                  <button className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm hover:border-stone-500">
+                  <SubmitButton variant="outline" pendingLabel="Sending…">
                     Reply
-                  </button>
+                  </SubmitButton>
                 </form>
               )}
             </div>
@@ -126,9 +135,9 @@ export function Comments({
             className="w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
           />
         </label>
-        <button className="mt-2 rounded-lg bg-stone-800 text-white px-4 py-1.5 text-sm hover:bg-stone-700">
+        <SubmitButton className="mt-2" pendingLabel="Posting…">
           Comment
-        </button>
+        </SubmitButton>
       </form>
     </section>
   );

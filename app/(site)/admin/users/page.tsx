@@ -3,10 +3,11 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { cancelInvite, createUser, deleteUser, resendInvite, setUserPassword } from "@/lib/admin-actions";
 import { CopyLink } from "@/components/CopyLink";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const input =
   "rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
-const button = "rounded-lg bg-stone-800 text-white px-3 py-1.5 text-sm hover:bg-stone-700";
 
 /** "in 6 days" / "tomorrow" / "today" -- rounded up, so it never reads as sooner than it is. */
 function expiryWords(at: Date | null) {
@@ -95,13 +96,19 @@ export default async function UsersPage({
                         placeholder="New password"
                         className={input}
                       />
-                      <button className={button}>Set</button>
+                      <SubmitButton pendingLabel="Setting…">Set</SubmitButton>
                     </form>
                   </details>
                   {u.id !== admin.id && (
                     <form action={deleteUser}>
                       <input type="hidden" name="userId" value={u.id} />
-                      <button className="text-sm text-red-600 hover:text-red-800">Delete</button>
+                      <ConfirmButton
+                        title={`Delete ${u.name}?`}
+                        description={`${u.email} is removed from every project and can no longer sign in. Their comments are deleted too. This can't be undone.`}
+                        confirmLabel="Delete person"
+                      >
+                        Delete
+                      </ConfirmButton>
                     </form>
                   )}
                 </div>
@@ -123,15 +130,28 @@ export default async function UsersPage({
                   <div className="flex gap-3 mt-2">
                     <form action={resendInvite}>
                       <input type="hidden" name="userId" value={u.id} />
-                      <button className="text-xs text-stone-600 hover:text-stone-900 underline">
+                      <SubmitButton
+                        variant="link"
+                        size="xs"
+                        className="h-auto px-0 text-xs text-stone-600 underline"
+                        pendingLabel="Making link…"
+                      >
                         New link
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={cancelInvite}>
                       <input type="hidden" name="userId" value={u.id} />
-                      <button className="text-xs text-stone-600 hover:text-stone-900 underline">
+                      <ConfirmButton
+                        variant="link"
+                        size="xs"
+                        className="h-auto px-0 text-xs text-stone-600 underline"
+                        title={`Cancel ${u.name}'s invitation?`}
+                        description="The link you sent stops working. Their account stays, but nobody can sign in to it until you send a new link or set a password."
+                        confirmLabel="Cancel invitation"
+                        pendingLabel="Canceling…"
+                      >
                         Cancel invitation
-                      </button>
+                      </ConfirmButton>
                     </form>
                   </div>
                 </div>
@@ -159,7 +179,7 @@ export default async function UsersPage({
               <option value="admin">Admin</option>
             </select>
           </label>
-          <button className={button}>Add</button>
+          <SubmitButton pendingLabel="Adding…">Add</SubmitButton>
         </form>
         <p className="text-xs text-stone-500 mt-2">
           You do not choose a password for them. Adding someone here creates a locked account and

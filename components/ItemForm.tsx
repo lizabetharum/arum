@@ -13,6 +13,7 @@ import {
 } from "@/lib/constants";
 import { looksLikeArtifactShell } from "@/lib/sanitize-html";
 import { NotePreview } from "@/components/NotePreview";
+import { SubmitButton } from "@/components/SubmitButton";
 
 const input =
   "w-full rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400";
@@ -504,13 +505,9 @@ export function ItemFormFields({
         )}
       </div>
 
-      <button
-        type="submit"
-        disabled={tooLarge}
-        className="rounded-lg bg-stone-800 text-white px-4 py-2 text-sm hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-stone-800"
-      >
+      <SubmitButton size="lg" className="px-4" disabled={tooLarge} pendingLabel="Saving…">
         {submitLabel}
-      </button>
+      </SubmitButton>
     </div>
   );
 }
