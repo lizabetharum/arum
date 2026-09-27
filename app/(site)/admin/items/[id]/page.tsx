@@ -88,6 +88,7 @@ export default async function AdminItemPage({
         state={shareState}
         restricted={item.restricted}
         returnTo="edit"
+        className=""
       />
 
       <section className="rounded-xl border border-red-200 bg-card p-4">

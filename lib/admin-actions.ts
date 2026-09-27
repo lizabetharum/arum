@@ -479,6 +479,7 @@ export async function shareItemAction(formData: FormData) {
   await requireAdmin();
   const itemId = str(formData, "itemId");
   const made = await createShare(itemId, str(formData, "expiry"));
+  if (made) await flash("Share link ready. Copy it below.");
   revalidatePath("/", "layout");
   // Back to the page the panel was used on, since it now appears on two.
   const back = str(formData, "returnTo") === "edit" ? `/admin/items/${itemId}` : `/items/${itemId}`;
@@ -490,6 +491,7 @@ export async function unshareItemAction(formData: FormData) {
   await requireAdmin();
   const itemId = str(formData, "itemId");
   await revokeShare(itemId);
+  await flash("Stopped sharing. The link no longer works.");
   revalidatePath("/", "layout");
   redirect(str(formData, "returnTo") === "edit" ? `/admin/items/${itemId}` : `/items/${itemId}`);
 }
