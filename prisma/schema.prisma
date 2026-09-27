@@ -87,6 +87,7 @@ model Item {
   restricted  Boolean     @default(false) // true: only granted users (and admins) see it
   grants      ItemGrant[]
   file        ItemFile?
+  share       ItemShare?
   tags        ItemTag[]
   comments    Comment[]
   createdAt   DateTime    @default(now())
@@ -168,4 +169,21 @@ model ItemFile {
   size      Int
   data      Bytes
   createdAt DateTime @default(now())
+}
+
+/// A link that lets someone read one item without an account.
+///
+/// Its own table, and created only when you ask for one: an item with no row
+/// here is private, which is every item until you decide otherwise. Deleting
+/// the row is what revokes the link, so revoking is immediate and total rather
+/// than a flag someone might read the wrong way.
+model ItemShare {
+  /// The secret in the URL. Random, and the primary key, so a lookup is the
+  /// whole check — there is no item id in the link to tamper with.
+  token     String    @id
+  itemId    String    @unique
+  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  /// When the link stops working. Null means it works until revoked.
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
 }

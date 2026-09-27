@@ -7,6 +7,8 @@ import { ItemFormFields } from "@/components/ItemForm";
 import { TriangleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { SharePanel } from "@/components/SharePanel";
+import { getShareState } from "@/lib/share";
 
 export default async function AdminItemPage({
   params,
@@ -20,10 +22,11 @@ export default async function AdminItemPage({
   const { error } = await searchParams;
   const item = await getItemForEdit(id);
   if (!item) notFound();
-  const [sections, hasSections, attached] = await Promise.all([
+  const [sections, hasSections, attached, shareState] = await Promise.all([
     getProjectSections(item.project.id),
     sectionsAvailable(),
     getAttachedFile(item.id),
+    getShareState(item.id),
   ]);
 
   return (
@@ -74,6 +77,18 @@ export default async function AdminItemPage({
           />
         </form>
       </div>
+
+      {/*
+        The same panel as the reading page. Sharing is a thing you decide about
+        an item, so it belongs where you go to change an item — not only on the
+        page you go to in order to read one.
+      */}
+      <SharePanel
+        itemId={item.id}
+        state={shareState}
+        restricted={item.restricted}
+        returnTo="edit"
+      />
 
       <section className="rounded-xl border border-red-200 bg-card p-4">
         <h2 className="text-sm font-semibold">Danger zone</h2>

@@ -8,6 +8,7 @@ import { requireAdmin, hashPassword, newInvite, unusablePassword } from "@/lib/a
 import { CATEGORIES, KINDS, MAX_PDF_BYTES } from "@/lib/constants";
 import { cleanStoredHtml } from "@/lib/sanitize-html";
 import { flash } from "@/lib/flash";
+import { createShare, revokeShare } from "@/lib/share";
 
 function slugify(name: string) {
   return (
@@ -329,6 +330,9 @@ async function savePdf(itemId: string, formData: FormData): Promise<string | nul
   }
 }
 
+const RUN_SHARES_MIGRATION =
+  "Share links need one more database update. Run sql/08-add-share-links.sql in the Supabase SQL Editor, then try again.";
+
 const RUN_SECTIONS_MIGRATION =
   "Adding items needs one more database update. Run sql/06-add-sections.sql in the Supabase SQL Editor, then try again.";
 
@@ -468,6 +472,26 @@ export async function moveItem(formData: FormData) {
   }
   revalidatePath("/", "layout");
   redirect(`/admin/projects/${item.project.slug}`);
+}
+
+/** Turn on (or replace) an item's share link. Admins only, like every write. */
+export async function shareItemAction(formData: FormData) {
+  await requireAdmin();
+  const itemId = str(formData, "itemId");
+  const made = await createShare(itemId, str(formData, "expiry"));
+  revalidatePath("/", "layout");
+  // Back to the page the panel was used on, since it now appears on two.
+  const back = str(formData, "returnTo") === "edit" ? `/admin/items/${itemId}` : `/items/${itemId}`;
+  redirect(`${back}${made ? "" : `?error=${encodeURIComponent(RUN_SHARES_MIGRATION)}`}`);
+}
+
+/** Withdraw an item's share link. The link stops working immediately. */
+export async function unshareItemAction(formData: FormData) {
+  await requireAdmin();
+  const itemId = str(formData, "itemId");
+  await revokeShare(itemId);
+  revalidatePath("/", "layout");
+  redirect(str(formData, "returnTo") === "edit" ? `/admin/items/${itemId}` : `/items/${itemId}`);
 }
 
 export async function deleteItem(formData: FormData) {

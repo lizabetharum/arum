@@ -11,18 +11,35 @@ import { Comments } from "@/components/Comments";
 import { ReviewFrame } from "@/components/ReviewFrame";
 import { NotePreview } from "@/components/NotePreview";
 import { CopyLink } from "@/components/CopyLink";
+import { SharePanel } from "@/components/SharePanel";
+import { getShareState } from "@/lib/share";
 
-export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ItemPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await requireUser();
   const { id } = await params;
+  const { error } = await searchParams;
   const item = await getAccessibleItem(user, id);
   if (!item) notFound();
   const comments = await getComments(user, id);
+  // Only an admin can share, so only an admin pays for the lookup.
+  const shareState = user.role === "admin" ? await getShareState(item.id) : null;
+  const isShared = shareState?.available === true && shareState.share !== null;
 
   const isGoogle = item.kind.startsWith("google_");
 
   return (
     <div>
+      {error && (
+        <p className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          {error}
+        </p>
+      )}
       <nav className="text-sm text-stone-500 mb-3">
         <Link href={`/projects/${item.project.slug}`} className="hover:text-stone-800">
           {item.project.name}
@@ -54,6 +71,11 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
               </span>
             ))}
             {item.restricted && <span className="text-stone-400">🔒 restricted</span>}
+            {isShared && (
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-800">
+                🔗 shared by link
+              </span>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -179,6 +201,9 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
               status: t.status,
             }))}
         />
+      )}
+      {shareState && (
+        <SharePanel itemId={item.id} state={shareState} restricted={item.restricted} />
       )}
       <Comments
         itemId={item.id}

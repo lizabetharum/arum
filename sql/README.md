@@ -48,6 +48,7 @@ only the ones you have not run yet. All are safe to run twice.
 | `05-add-invites.sql` | `User.inviteToken`, `User.inviteExpiresAt` | "Add a person" fails |
 | `06-add-sections.sql` | `Item.section`, `Item.position` | Projects stay one ungrouped list |
 | `07-add-pdfs.sql` | The `ItemFile` table | Uploading a PDF is refused |
+| `08-add-share-links.sql` | The `ItemShare` table | No item can be shared by link |
 
 `/api/health` lists by name any of these you have not run yet.
 
