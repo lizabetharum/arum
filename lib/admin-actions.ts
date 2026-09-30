@@ -9,6 +9,7 @@ import { CATEGORIES, KINDS, MAX_PDF_BYTES } from "@/lib/constants";
 import { cleanStoredHtml } from "@/lib/sanitize-html";
 import { flash } from "@/lib/flash";
 import { createShare, revokeShare } from "@/lib/share";
+import { isMissingAttachmentTable } from "@/lib/attachments";
 
 function slugify(name: string) {
   return (
@@ -494,6 +495,47 @@ export async function unshareItemAction(formData: FormData) {
   await flash("Stopped sharing. The link no longer works.");
   revalidatePath("/", "layout");
   redirect(str(formData, "returnTo") === "edit" ? `/admin/items/${itemId}` : `/items/${itemId}`);
+}
+
+// ---- Attachments -------------------------------------------------------------
+//
+// Uploading happens in a route handler (app/(site)/admin/items/[id]/attachments),
+// one file per request. These two are small edits, so they stay actions. They
+// refresh the edit page in place rather than redirecting, so working down a
+// long list of images does not jump you back to the top after each one.
+
+export async function updateAttachmentCaption(formData: FormData) {
+  await requireAdmin();
+  const attachmentId = str(formData, "attachmentId");
+  const caption = str(formData, "caption").slice(0, 500);
+  try {
+    const row = await prisma.itemAttachment.update({
+      where: { id: attachmentId },
+      data: { caption },
+      select: { itemId: true },
+    });
+    await flash(caption ? "Caption saved." : "Caption removed.");
+    revalidatePath(`/admin/items/${row.itemId}`);
+    revalidatePath(`/items/${row.itemId}`);
+  } catch (e) {
+    if (!isMissingAttachmentTable(e)) throw e;
+  }
+}
+
+export async function deleteAttachment(formData: FormData) {
+  await requireAdmin();
+  const attachmentId = str(formData, "attachmentId");
+  try {
+    const gone = await prisma.itemAttachment.delete({
+      where: { id: attachmentId },
+      select: { itemId: true, filename: true },
+    });
+    await flash(`Removed ${gone.filename || "the attachment"}.`);
+    revalidatePath(`/admin/items/${gone.itemId}`);
+    revalidatePath(`/items/${gone.itemId}`);
+  } catch (e) {
+    if (!isMissingAttachmentTable(e)) throw e;
+  }
 }
 
 export async function deleteItem(formData: FormData) {

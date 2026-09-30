@@ -4,6 +4,8 @@ import { isMarkdownKind, kindIcon } from "@/lib/constants";
 import { embedUrl } from "@/lib/embed";
 import { getSharedItem } from "@/lib/share";
 import { NotePreview } from "@/components/NotePreview";
+import { listAttachments } from "@/lib/attachments";
+import { AttachmentGallery } from "@/components/AttachmentGallery";
 
 // Unlisted, not public: a search engine should never turn one of these up.
 export const metadata = { robots: { index: false, follow: false } };
@@ -28,6 +30,7 @@ export default async function SharedItemPage({
   const { item, expiresAt } = shared;
   const isGoogle = item.kind.startsWith("google_");
   const note = expiryNote(expiresAt);
+  const extras = await listAttachments(item.id);
 
   return (
     <main className="min-h-screen bg-stone-100">
@@ -107,6 +110,8 @@ export default async function SharedItemPage({
             Open link ↗
           </a>
         )}
+
+        <AttachmentGallery attachments={extras.attachments} base={`/shared/${token}/attachments`} />
 
         <footer className="mt-8 border-t border-stone-200 pt-4 text-xs text-stone-500">
           <p>Shared with you as a read-only copy. {note}</p>

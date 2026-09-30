@@ -141,6 +141,14 @@ export async function GET() {
     });
   }
 
+  if (!(await hasTable("ItemAttachment"))) {
+    pending.push({
+      file: "sql/09-add-attachments.sql",
+      adds: "the ItemAttachment table",
+      until: "Adding attachments to an item is refused; everything else is unaffected.",
+    });
+  }
+
   if (pending.length > 0) {
     return Response.json(
       {

@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { SharePanel } from "@/components/SharePanel";
 import { getShareState } from "@/lib/share";
+import { listAttachments } from "@/lib/attachments";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 
 export default async function AdminItemPage({
   params,
@@ -22,11 +24,12 @@ export default async function AdminItemPage({
   const { error } = await searchParams;
   const item = await getItemForEdit(id);
   if (!item) notFound();
-  const [sections, hasSections, attached, shareState] = await Promise.all([
+  const [sections, hasSections, attached, shareState, extras] = await Promise.all([
     getProjectSections(item.project.id),
     sectionsAvailable(),
     getAttachedFile(item.id),
     getShareState(item.id),
+    listAttachments(item.id),
   ]);
 
   return (
@@ -78,6 +81,12 @@ export default async function AdminItemPage({
         </form>
       </div>
 
+      <AttachmentsPanel
+        itemId={item.id}
+        available={extras.available}
+        attachments={extras.attachments}
+      />
+
       {/*
         The same panel as the reading page. Sharing is a thing you decide about
         an item, so it belongs where you go to change an item — not only on the
@@ -100,7 +109,7 @@ export default async function AdminItemPage({
           <input type="hidden" name="itemId" value={item.id} />
           <ConfirmButton
             title={`Delete ${item.title}?`}
-            description="Its attached file and comments go with it. This can't be undone."
+            description="Its attached files and comments go with it. This can't be undone."
             confirmLabel="Delete item"
           >
             Delete this item

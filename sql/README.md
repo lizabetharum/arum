@@ -49,6 +49,7 @@ only the ones you have not run yet. All are safe to run twice.
 | `06-add-sections.sql` | `Item.section`, `Item.position` | Projects stay one ungrouped list |
 | `07-add-pdfs.sql` | The `ItemFile` table | Uploading a PDF is refused |
 | `08-add-share-links.sql` | The `ItemShare` table | No item can be shared by link |
+| `09-add-attachments.sql` | The `ItemAttachment` table | Adding attachments to an item is refused |
 
 `/api/health` lists by name any of these you have not run yet.
 
