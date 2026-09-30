@@ -78,6 +78,45 @@ export const MAX_IMAGE_BYTES = 2_000_000;
  */
 export const MAX_PDF_BYTES = 3_500_000;
 
+/**
+ * Largest single attachment.
+ *
+ * Each attachment goes up in its own request, so this is a per-file ceiling,
+ * not a per-item one: ten 3 MB screenshots are fine. The number sits under
+ * Vercel's 4.5 MB cap on one request body, with room for the form around it.
+ */
+export const MAX_ATTACHMENT_BYTES = 3_500_000;
+
+/**
+ * Files an attachment may never be, because a browser would run them: an SVG
+ * or an HTML page can carry script. Checked by extension and declared type in
+ * the form, and again on the server.
+ */
+export const BLOCKED_ATTACHMENT_EXTENSIONS = [
+  ".svg",
+  ".svgz",
+  ".html",
+  ".htm",
+  ".xhtml",
+  ".xht",
+  ".xml",
+  ".js",
+  ".mjs",
+];
+
+export function isBlockedAttachment(name: string, type: string) {
+  const lower = name.toLowerCase();
+  if (BLOCKED_ATTACHMENT_EXTENSIONS.some((ext) => lower.endsWith(ext))) return true;
+  // Exact types, not substrings: Word, Excel and PowerPoint files all carry
+  // "openxmlformats" in their type and must not be caught by an "xml" match.
+  return /^(image\/svg\+xml|text\/html|application\/xhtml\+xml|(text|application)\/(xml|javascript|ecmascript|x-javascript))$/i.test(
+    type.split(";")[0].trim(),
+  );
+}
+
+/** The image types shown inline. Everything else attached is a download. */
+export const INLINE_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+
 export function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;

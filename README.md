@@ -41,6 +41,31 @@ and diagrams fit comfortably, photos straight off a phone will not — export
 smaller, or paste a URL to an image hosted elsewhere. If you ever need many large
 images, that's the point to move them to Supabase Storage.
 
+### Attachments
+
+Any item can carry extra files. A webinar transcript can have its slide
+screenshots attached under it, and a debrief can have its photos.
+
+Open the item, click **Edit**, and use the **Attachments** panel below the form.
+Choose several files at once or drop them on the panel. Each file saves as soon
+as it uploads, separately from the item's Save button. Give an image a caption
+and it shows under the picture and serves as its alt text.
+
+- **Images** (PNG, JPEG, GIF, WebP) show in a gallery under the item. Click one
+  to open it full size.
+- **Anything else** shows as a download link. PDFs also get an Open link.
+- **SVG and HTML files are refused**, because a browser would run any script
+  inside them.
+- **3.5 MB per file**, with no limit on how many. Each file goes up in its own
+  request, so the limit applies to each file, not the whole batch.
+
+A file's type is read from its own first bytes, not its name. A file renamed
+to `.png` that isn't a real PNG is only ever offered as a download.
+
+Attachments follow the item's access rules. Restrict the item and they are
+restricted with it. Share it by link and they are shared with it. Needs
+`sql/09-add-attachments.sql`.
+
 ### Saving a Claude Artifact
 
 The artifact viewer has no download button — its header offers Share and nothing

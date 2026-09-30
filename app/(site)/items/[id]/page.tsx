@@ -13,6 +13,8 @@ import { NotePreview } from "@/components/NotePreview";
 import { CopyLink } from "@/components/CopyLink";
 import { SharePanel } from "@/components/SharePanel";
 import { getShareState } from "@/lib/share";
+import { listAttachments } from "@/lib/attachments";
+import { AttachmentGallery } from "@/components/AttachmentGallery";
 
 export default async function ItemPage({
   params,
@@ -26,7 +28,7 @@ export default async function ItemPage({
   const { error } = await searchParams;
   const item = await getAccessibleItem(user, id);
   if (!item) notFound();
-  const comments = await getComments(user, id);
+  const [comments, extras] = await Promise.all([getComments(user, id), listAttachments(item.id)]);
   // Only an admin can share, so only an admin pays for the lookup.
   const shareState = user.role === "admin" ? await getShareState(item.id) : null;
   const isShared = shareState?.available === true && shareState.share !== null;
@@ -202,6 +204,7 @@ export default async function ItemPage({
             }))}
         />
       )}
+      <AttachmentGallery attachments={extras.attachments} base={`/items/${item.id}/attachments`} />
       {shareState && (
         <SharePanel itemId={item.id} state={shareState} restricted={item.restricted} />
       )}

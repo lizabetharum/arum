@@ -87,6 +87,7 @@ model Item {
   restricted  Boolean     @default(false) // true: only granted users (and admins) see it
   grants      ItemGrant[]
   file        ItemFile?
+  attachments ItemAttachment[]
   share       ItemShare?
   tags        ItemTag[]
   comments    Comment[]
@@ -169,6 +170,32 @@ model ItemFile {
   size      Int
   data      Bytes
   createdAt DateTime @default(now())
+}
+
+/// Extra files hung off an item: the slides from a webinar next to its
+/// transcript, the photos that go with a debrief. Any kind of item can carry
+/// them, and it can carry as many as it needs.
+///
+/// Like ItemFile, the bytes sit in their own table so that lists and search
+/// never read them. Each file arrives in its own request, which is what lets a
+/// batch of screenshots add up to far more than Vercel's 4.5 MB request cap.
+model ItemAttachment {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  /// The name it was uploaded under, so it can be handed back the same way.
+  filename  String   @default("")
+  /// Decided from the file's own first bytes, never from what the browser
+  /// claimed. Only PNG, JPEG, GIF, WebP and PDF get a real type; everything
+  /// else is stored as application/octet-stream and only ever downloaded.
+  mimeType  String   @default("application/octet-stream")
+  size      Int
+  /// Shown under the image, and used as its alt text.
+  caption   String   @default("")
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  @@index([itemId, createdAt])
 }
 
 /// A link that lets someone read one item without an account.
